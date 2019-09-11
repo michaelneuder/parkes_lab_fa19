@@ -16,13 +16,18 @@ class State(object):
     
     def __str__(self):
         return 'a={}, h={}, fork={}'.format(self.a, self.h, self.fork)
-
+    
+    def getTupleRepresentation(self):
+        return (self.a, self.h, self.fork)
 
 class Environment(object):
     def __init__(self, alpha, T, gamma, rand_val=np.random.uniform()):
         self.alpha = alpha
         self.T = T
         self.gamma = gamma
+        self.current_state = self.getInitialState(rand_val)
+    
+    def reset(self, rand_val=np.random.uniform()):
         self.current_state = self.getInitialState(rand_val)
         
     def getInitialState(self, rand_val):
@@ -71,16 +76,19 @@ class Environment(object):
         return new_state, reward    
         
     def getLegalActions(self):
+        assert(self.current_state.a <= self.T)
+        assert(self.current_state.h <= self.T)
+        actions = [ADOPT, WAIT]
         if (self.current_state.a == self.T) or (self.current_state.h == self.T):
-            return [ADOPT]
-        elif self.current_state.a > self.current_state.h:
-            return [ADOPT, OVERRIDE, WAIT, MATCH]
-        elif self.current_state.a == self.current_state.h:
-            return [ADOPT, WAIT, MATCH]
-        else:
-            return [ADOPT, WAIT]
+            return actions
+        if self.current_state.a > self.current_state.h:
+            actions.append(OVERRIDE)
+        if (self.current_state.fork == RELEVANT) and (self.current_state.a >= self.current_state.h):
+            actions.append(MATCH)
+        return actions
     
-    def takeAction(self, action, rand_val):
+    def takeAction(self, action, rand_val=np.random.uniform()):
+        assert(action in [0, 1, 2, 3])
         if action == 0:
             return self.getNextStateAdopt(rand_val)
         elif action == 1:
