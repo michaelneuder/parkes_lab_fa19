@@ -84,11 +84,13 @@ class Environment(object):
         actions.append(WAIT)
         if self.current_state.a > self.current_state.h:
             actions.append(OVERRIDE)
-        if (self.current_state.fork == RELEVANT) and (self.current_state.a >= self.current_state.h):
+        if (self.current_state.fork == RELEVANT) and (self.current_state.a >= self.current_state.h) and (self.gamma > 0):
             actions.append(MATCH)
         return actions
     
-    def takeAction(self, action, rand_val=np.random.uniform()):
+    def takeAction(self, action, rand_val=None):
+        if not rand_val:
+            rand_val = np.random.uniform()
         assert(action in [0, 1, 2, 3])
         if action == 0:
             return self.getNextStateAdopt(rand_val)

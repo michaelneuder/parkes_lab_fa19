@@ -48,7 +48,7 @@ class QLearningAgent(object):
         for _ in range(iterations):
             current_state_tuple = self.env.current_state.getTupleRepresentation()
             current_state_index = self.state_mapping[current_state_tuple]
-            action = self.chooseAction(self.env.current_state)
+            action = self.chooseAction(current_state_index)
             print('current_state: ', self.env.current_state, ' -- action: ', action)
             new_state, reward = self.env.takeAction(action)
             print('new_state: ', new_state, ' -- reward: ', reward)
@@ -60,9 +60,62 @@ class QLearningAgent(object):
             sample = reward_value + self.discount*highest_qvalue_new_state
             self.qvalues[current_state_index, action] = (1 - self.rate)*self.qvalues[current_state_index, action] + self.rate*sample
 
+            # reduce exploration rate
+            if self.rate > 0.01:
+                self.rate *= 0.99
+    
+    def extractPolicy(self):
+        policy = []
+        for i in range(len(self.states)):
+            max_action = np.argmax(self.qvalues[i])
+            policy.append(max_action)
+        return policy
+
+    def processPolicyIrrelevant(self, policy):
+        results = ''
+        for a in range(9):
+            for h in range(9):
+                state_index = self.state_mapping[(a, h, 0)]
+                action = policy[state_index]
+                if action == 0:
+                    results += 'a'
+                elif action == 1:
+                    results += 'o'
+                elif action == 2:
+                    results += 'w'
+                elif action == 3:
+                    results += 'm'
+                else:
+                    print('here')
+                results += ' & '
+            results += '\\\\ \n'
+        print(results)
+    
+    def processPolicy(self, policy):
+        results = ''
+        for a in range(9):
+            for h in range(9):
+                for fork in range(3):
+                    state_index = self.state_mapping[(a, h, fork)]
+                    action = policy[state_index]
+                    if action == 0:
+                        results += 'a'
+                    elif action == 1:
+                        results += 'o'
+                    elif action == 2:
+                        results += 'w'
+                    elif action == 3:
+                        results += 'm'
+                    else:
+                        print('here')
+                results += ' & '
+            results += '\\\\ \n'
+        print(results)
+
 def main():
     qlagent = QLearningAgent(discount=1, alpha=0.35, T=9, gamma=0, rho=0.36702728271484375)
     qlagent.runTrial(iterations=100000)
+    qlagent.processPolicyIrrelevant(qlagent.extractPolicy())
 
 if __name__ == "__main__":
     main()
