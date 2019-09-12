@@ -78,9 +78,10 @@ class Environment(object):
     def getLegalActions(self):
         assert(self.current_state.a <= self.T)
         assert(self.current_state.h <= self.T)
-        actions = [ADOPT, WAIT]
+        actions = [ADOPT]
         if (self.current_state.a == self.T) or (self.current_state.h == self.T):
             return actions
+        actions.append(WAIT)
         if self.current_state.a > self.current_state.h:
             actions.append(OVERRIDE)
         if (self.current_state.fork == RELEVANT) and (self.current_state.a >= self.current_state.h):
