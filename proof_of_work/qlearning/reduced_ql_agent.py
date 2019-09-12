@@ -83,6 +83,7 @@ class QLearningAgent(object):
     def processPolicy(self, policy):
         results = ''
         for a in range(9):
+            results += '{} & '.format(a)
             for h in range(9):
                 state_index = self.state_mapping[(a, h)]
                 action = policy[state_index]
@@ -94,12 +95,13 @@ class QLearningAgent(object):
                 else:
                     results += 'w'
                 results += ' & '
+            results = results[:-2]
             results += '\\\\ \n'
         print(results)
 
 def main():
     qlagent = QLearningAgent(discount=1, alpha=0.35, T=9, rho=0.36702728271484375)
-    qlagent.runTrial(iterations=1000000)
+    qlagent.runTrial(iterations=100000)
     qlagent.processPolicy(qlagent.extractPolicy())
 
 if __name__ == "__main__":
