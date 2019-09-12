@@ -12,7 +12,8 @@ class QLearningAgent(object):
         self.qvalues = np.zeros((self.state_count, 3))
         self.rate = 1
         self.rho = rho
-        
+        self.states_visited = np.zeros((self.T+1, self.T+1))
+
         # initialize state mapping and states
         self.state_mapping = {}
         self.states = []
@@ -46,6 +47,7 @@ class QLearningAgent(object):
         self.env = e(self.alpha, self.T)
         for _ in range(iterations):
             current_state_tuple = self.env.current_state.getTupleRepresentation()
+            self.states_visited[current_state_tuple] += 1
             current_state_index = self.state_mapping[current_state_tuple]
             action = self.chooseAction(current_state_index)
             print('current_state: ', self.env.current_state, ' -- action: ', action)
@@ -98,11 +100,27 @@ class QLearningAgent(object):
             results = results[:-2]
             results += '\\\\ \n'
         print(results)
+    
+    def plotStatesVisited(self):
+        f, ax = plt.subplots(figsize=(10,10))
+        im = ax.imshow(self.states_visited, cmap='hot', interpolation='nearest')
+        f.colorbar(im)
+        plt.savefig('states_visited.png')
+        plt.show()
+    
+    def plotLogStatesVisited(self):
+        f, ax = plt.subplots(figsize=(10,10))
+        im = ax.imshow(np.log(self.states_visited+1), cmap='hot', interpolation='nearest')
+        f.colorbar(im)
+        plt.savefig('log_states_visited.png')
+        plt.show()
 
 def main():
-    qlagent = QLearningAgent(discount=1, alpha=0.35, T=9, rho=0.36702728271484375)
-    qlagent.runTrial(iterations=100000)
+    qlagent = QLearningAgent(discount=1, alpha=0.45, T=9, rho=0.6032638549804688)
+    qlagent.runTrial(iterations=int(1000*1000))
     qlagent.processPolicy(qlagent.extractPolicy())
+    qlagent.plotStatesVisited()
+    qlagent.plotLogStatesVisited()
 
 if __name__ == "__main__":
     main()
