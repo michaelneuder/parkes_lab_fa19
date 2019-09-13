@@ -1,6 +1,7 @@
 from reduced_environment import Environment as e 
 import matplotlib.pyplot as plt
 import numpy as np
+np.random.seed(0)
 
 class QLearningAgent(object):
     def __init__(self, discount, alpha, T, rho):
@@ -11,9 +12,9 @@ class QLearningAgent(object):
         self.state_count = (T+1) * (T+1)
         self.qvalues = np.zeros((self.state_count, 3))
         self.rho = rho
-        self.initial_learning_rate = 0.99
+        self.initial_learning_rate = 0.995
         self.min_learning_rate = 0.05
-        self.initial_exploration_rate = 0.99
+        self.initial_exploration_rate = 0.995
         self.min_exploration_rate = 0.1
         self.states_visited = np.zeros((self.T+1, self.T+1))
 
@@ -122,8 +123,8 @@ class QLearningAgent(object):
         plt.show()
 
 def main():
-    qlagent = QLearningAgent(discount=0.99, alpha=0.35, T=10, rho=0.36702728271484375)
-    qlagent.runTrial(iterations=int(1000*1000))
+    qlagent = QLearningAgent(discount=1, alpha=1/3, T=9 , rho=0.33657073974609375)
+    qlagent.runTrial(iterations=int(1000*10000))
     qlagent.processPolicy(qlagent.extractPolicy())
     qlagent.plotStatesVisited()
     qlagent.plotLogStatesVisited()

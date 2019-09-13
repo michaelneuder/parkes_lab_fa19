@@ -1,4 +1,5 @@
 import numpy as np
+np.random.seed(0)
 
 ADOPT = 0
 OVERRIDE = 1
