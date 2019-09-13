@@ -10,8 +10,11 @@ class QLearningAgent(object):
         self.T = T
         self.state_count = (T+1) * (T+1)
         self.qvalues = np.zeros((self.state_count, 3))
-        self.rate = 1
         self.rho = rho
+        self.initial_learning_rate = 0.99
+        self.min_learning_rate = 0.05
+        self.initial_exploration_rate = 0.99
+        self.min_exploration_rate = 0.1
         self.states_visited = np.zeros((self.T+1, self.T+1))
 
         # initialize state mapping and states
@@ -24,10 +27,14 @@ class QLearningAgent(object):
                 self.states.append((a, h))
                 count += 1
     
-    def chooseAction(self, state_index):
+    def chooseAction(self, current_state):
         legal_actions = self.env.getLegalActions()
+        state_index = self.state_mapping[current_state]
         # explore
-        if np.random.uniform() < self.rate:
+        current_explore_rate = np.power(self.initial_exploration_rate, self.states_visited[current_state])
+        if current_explore_rate < self.min_exploration_rate:
+            current_explore_rate = self.min_exploration_rate
+        if np.random.uniform() < current_explore_rate:
             return np.random.choice(legal_actions)
        
         # exploit
@@ -49,7 +56,7 @@ class QLearningAgent(object):
             current_state_tuple = self.env.current_state.getTupleRepresentation()
             self.states_visited[current_state_tuple] += 1
             current_state_index = self.state_mapping[current_state_tuple]
-            action = self.chooseAction(current_state_index)
+            action = self.chooseAction(current_state_tuple)
             print('current_state: ', self.env.current_state, ' -- action: ', action)
             new_state, reward = self.env.takeAction(action)
             print('new_state: ', new_state, ' -- reward: ', reward)
@@ -57,13 +64,12 @@ class QLearningAgent(object):
             reward_value = self.evalReward(reward)
             highest_qvalue_new_state = max(self.qvalues[new_state_index])
             
+            current_learn_rate = np.power(self.initial_learning_rate, self.states_visited[current_state_tuple])
+            if current_learn_rate < self.min_learning_rate:
+                current_learn_rate = self.min_learning_rate
             # Q-values being updated
             sample = reward_value + self.discount*highest_qvalue_new_state
-            self.qvalues[current_state_index, action] = (1 - self.rate)*self.qvalues[current_state_index, action] + self.rate*sample
-
-            # reduce exploration rate
-            if self.rate > 0.05:
-                self.rate *= 0.99
+            self.qvalues[current_state_index, action] = (1 - current_learn_rate)*self.qvalues[current_state_index, action] + current_learn_rate*sample
     
     def extractPolicy(self):
         policy = []
@@ -116,7 +122,7 @@ class QLearningAgent(object):
         plt.show()
 
 def main():
-    qlagent = QLearningAgent(discount=1, alpha=0.45, T=9, rho=0.6032638549804688)
+    qlagent = QLearningAgent(discount=0.99, alpha=0.35, T=10, rho=0.36702728271484375)
     qlagent.runTrial(iterations=int(1000*1000))
     qlagent.processPolicy(qlagent.extractPolicy())
     qlagent.plotStatesVisited()

@@ -87,9 +87,9 @@ class SelfishMDP(object):
         opt_policy = rvi.policy
         print('alpha: ', self.alpha, 'lower bound reward:', rho)
         
-        ql = mdptoolbox.mdp.QLearning(self.transitions, total_reward, discount=1, n_iter=100000)
-        ql.run()
-        self.processPolicy(ql.policy)
+        # ql = mdptoolbox.mdp.QLearning(self.transitions, total_reward, discount=1, n_iter=100000)
+        # ql.run()
+        # self.processPolicy(ql.policy)
         
         # vi = mdptoolbox.mdp.ValueIteration(self.transitions, total_reward, discount=1, epsilon=self.epsilon/8)
         # vi.run()
@@ -99,7 +99,7 @@ class SelfishMDP(object):
         # pi.run()
         # self.processPolicy(pi.policy)
         
-        # self.processPolicy(opt_policy)
+        self.processPolicy(opt_policy)
         
     def processPolicy(self, policy):
         results = ''
@@ -121,7 +121,7 @@ class SelfishMDP(object):
         print(results)
 
 def main():
-    for alpha in [0.45]:
+    for alpha in [0.35]:
         print(alpha)
         mdp = SelfishMDP(alpha=alpha, T=9, epsilon=10e-5)
         mdp.getRhoBounds()
