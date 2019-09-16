@@ -72,6 +72,27 @@ class QLearningAgent(object):
             sample = reward_value + self.discount*highest_qvalue_new_state
             self.qvalues[current_state_index, action] = (1 - current_learn_rate)*self.qvalues[current_state_index, action] + current_learn_rate*sample
     
+    def runTrial_test(self, iterations):
+        self.env = e(self.alpha, self.T)
+        for _ in range(iterations):
+            current_state_tuple = self.env.current_state.getTupleRepresentation()
+            self.states_visited[current_state_tuple] += 1
+            current_state_index = self.state_mapping[current_state_tuple]
+            action = self.chooseAction(current_state_tuple)
+            print('current_state: ', self.env.current_state, ' -- action: ', action)
+            new_state, reward = self.env.takeAction(action)
+            print('new_state: ', new_state, ' -- reward: ', reward)
+            new_state_index = self.state_mapping[new_state.getTupleRepresentation()]
+            reward_value = self.evalReward(reward)
+            highest_qvalue_new_state = max(self.qvalues[new_state_index])
+            
+            current_learn_rate = 0.1
+            # if current_learn_rate < self.min_learning_rate:
+            #     current_learn_rate = self.min_learning_rate
+            # Q-values being updated
+            sample = reward_value + self.discount*highest_qvalue_new_state
+            self.qvalues[current_state_index, action] = (1 - current_learn_rate)*self.qvalues[current_state_index, action] + current_learn_rate*sample
+    
     def extractPolicy(self):
         policy = []
         for i in range(len(self.states)):
@@ -124,7 +145,7 @@ class QLearningAgent(object):
 
 def main():
     qlagent = QLearningAgent(discount=1, alpha=1/3, T=9 , rho=0.33657073974609375)
-    qlagent.runTrial(iterations=int(1000*10000))
+    qlagent.runTrial(iterations=int(1000*1000))
     qlagent.processPolicy(qlagent.extractPolicy())
     qlagent.plotStatesVisited()
     qlagent.plotLogStatesVisited()

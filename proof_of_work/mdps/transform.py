@@ -178,11 +178,11 @@ class SelfishMDP(object):
 
 
 def main():
-    for alpha in [0.35]:
+    for alpha in [0.45]:
         print(alpha)
-        mdp = SelfishMDP(alpha=alpha, T=9, gamma=0.0, epsilon=10e-5)
+        mdp = SelfishMDP(alpha=alpha, T=9, gamma=0.4, epsilon=10e-5)
         policy = mdp.getRhoBounds()
-        mdp.processPolicyIrrelevant(policy)
+        mdp.processPolicy(policy)
 
 if __name__ == "__main__":
     main()
