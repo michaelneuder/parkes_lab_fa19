@@ -4,6 +4,7 @@ from keras.layers import Dense
 from keras.optimizers import Adam
 import matplotlib.pyplot as plt
 import numpy as np
+import progressbar
 np.random.seed(0)
 
 class DeepQLearningAgent(object):
@@ -68,13 +69,12 @@ class DeepQLearningAgent(object):
     def runTrial(self, iterations):
         self.env = e(self.alpha, self.T)
         self.initializeModel()
-        for _ in range(iterations):
+        bar = progressbar.ProgressBar()
+        for _ in bar(range(iterations)):
             current_state_tuple = self.env.current_state.getTupleRepresentation()
             self.states_visited[current_state_tuple] += 1
             action = self.chooseAction(current_state_tuple)
-            print('current_state: ', self.env.current_state, ' -- action: ', action)
             new_state, reward = self.env.takeAction(action)
-            print('new_state: ', new_state, ' -- reward: ', reward)
             reward_value = self.evalReward(reward)
             
             # creating a new memory
