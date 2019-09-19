@@ -13,6 +13,7 @@ class Environment(object):
         self.current_state = TERMINAL_STATE
 
     def reset(self, rand_val=None):
+        # resents env to one of original states and returns the state.
         if not rand_val:
             rand_val = np.random.uniform()
         if rand_val < self.alpha:
