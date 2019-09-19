@@ -81,10 +81,16 @@ class DeepQLearningAgent(object):
             # training network
             if len(self.memories) > self.training_memory_count:
                 self.trainNeuralNet()
-            if len(self.memories) > self.max_memory_count:
-                self.memories.pop(0)
-            if self.learning_update_count % self.update_target_frequency == 0:
-                self.syncModels()
+                self.learning_update_count += 1
+
+                # keep memory list finite
+                if len(self.memories) > self.max_memory_count:
+                    self.memories.pop(0)
+                
+                # update models
+                if self.learning_update_count % self.update_target_frequency == 0:
+                    print('global step: {}. syncing models'.format(self.learning_update_count))
+                    self.syncModels()
     
     def trainNeuralNet(self):
         memory_subset = np.random.choice(self.memories, self.training_memory_count, replace=False)

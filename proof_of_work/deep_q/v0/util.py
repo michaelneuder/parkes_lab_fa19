@@ -39,12 +39,8 @@ class ResultsAnalyzer(object):
             a, h = state
             # any action is legal
             if a > h:
-                print('all legal')
-                print(self.value_model.predict(prepareInput(state)))
                 max_action = np.argmax(self.value_model.predict(prepareInput(state))[0])
             else:
-                print('no override')
-                print(self.value_model.predict(prepareInput(state)))
                 arg_sorted = np.argsort(self.value_model.predict(prepareInput(state))[0])
                 # override not legal
                 if arg_sorted[0] == 1:
@@ -74,16 +70,18 @@ class ResultsAnalyzer(object):
             results += '\\\\ \n'
         print(results)
     
-    def plotStatesVisited(self):
+    def plotStatesVisited(self, save=False):
         f, ax = plt.subplots(figsize=(10,10))
         im = ax.imshow(self.states_visited, cmap='hot', interpolation='nearest')
         f.colorbar(im)
-        plt.savefig('states_visited.png')
+        if save:
+            plt.savefig('states_visited.png')
         plt.show()
     
-    def plotLogStatesVisited(self):
+    def plotLogStatesVisited(self, save=False):
         f, ax = plt.subplots(figsize=(10,10))
         im = ax.imshow(np.log(self.states_visited+1), cmap='hot', interpolation='nearest')
         f.colorbar(im)
-        plt.savefig('log_states_visited.png')
+        if save:
+            plt.savefig('log_states_visited.png')
         plt.show()
