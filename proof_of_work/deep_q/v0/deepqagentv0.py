@@ -22,7 +22,7 @@ class DeepQLearningAgent(object):
         # deep q
         self.learning_rate = 0.001
         self.value_model = util.createModel(self.learning_rate)
-        self.target_model = None
+        self.target_model = copy.deepcopy(self.value_model)
         self.learning_update_count = 0
         self.memories = []
         self.training_memory_count = 32
@@ -35,6 +35,7 @@ class DeepQLearningAgent(object):
         
         # visualization
         self.states_visited = np.zeros((self.T+1, self.T+1))
+        self.steps_before_done = []
     
     def chooseAction(self, current_state):
         # finding rate of exploration. Linear decay to minimum.
@@ -59,7 +60,9 @@ class DeepQLearningAgent(object):
     def runTrial(self):
         done = False
         self.env.reset()
+        step_counter = 0
         while not done:
+            step_counter += 1
             current_state = self.env.current_state
             self.states_visited[current_state] += 1
             
@@ -91,6 +94,8 @@ class DeepQLearningAgent(object):
                 if self.learning_update_count % self.update_target_frequency == 0:
                     print('global step: {}. syncing models'.format(self.learning_update_count))
                     self.syncModels()
+                    self.value_model.save('saved_models/value_net_iter{0:06d}.h5'.format(self.learning_update_count))
+        self.steps_before_done.append(step_counter)
     
     def trainNeuralNet(self):
         memory_subset = np.random.choice(self.memories, self.training_memory_count, replace=False)
@@ -102,7 +107,14 @@ class DeepQLearningAgent(object):
             if not memory['done']:
                 total_reward += self.discount * max(self.target_model.predict(util.prepareInput(memory['new_state']))[0])
             target = self.value_model.predict(util.prepareInput(memory['current_state']))
+            # target = np.zeros((1,3))
             
+            # clip total reward
+            if total_reward > 1:
+                total_reward = 1
+            elif total_reward < -1:
+                total_reward = -1
+
             # this modifies the prediction to have new value for the action taken
             target[0][memory['action']] = total_reward
             training_data.append(memory['current_state'])
@@ -117,14 +129,15 @@ class DeepQLearningAgent(object):
 
 def main():
     qlagent = DeepQLearningAgent(discount=1, alpha=1/3, T=9 , rho=0.33657073974609375)
-    qlagent.learn(iterations=int(6))
+    qlagent.learn(iterations=int(200))
     
     # results
-    analyzer = util.ResultsAnalyzer(qlagent.value_model, qlagent.states_visited)
+    analyzer = util.ResultsAnalyzer(qlagent.value_model, qlagent.states_visited, qlagent.steps_before_done)
     end_policy = analyzer.extractPolicy()
     analyzer.processPolicy(end_policy)
-    analyzer.plotStatesVisited()
-    analyzer.plotLogStatesVisited()
+    analyzer.plotStatesVisited(save=True)
+    analyzer.plotLogStatesVisited(save=True)
+    analyzer.plotStepsCounter(save=True)
 
 if __name__ == "__main__":
     main()

@@ -19,9 +19,10 @@ def prepareInput(state):
     return np.reshape(np.asarray(state), (1,2))
 
 class ResultsAnalyzer(object):
-    def __init__(self, model, states_visited, T=9):
+    def __init__(self, model, states_visited, steps, T=9):
         self.value_model = model
         self.states_visited = states_visited
+        self.steps_per_trial = steps
         
         # initialize state mapping and states
         self.state_mapping = {}
@@ -75,7 +76,7 @@ class ResultsAnalyzer(object):
         im = ax.imshow(self.states_visited, cmap='hot', interpolation='nearest')
         f.colorbar(im)
         if save:
-            plt.savefig('states_visited.png')
+            plt.savefig('img/states_visited.png')
         plt.show()
     
     def plotLogStatesVisited(self, save=False):
@@ -83,5 +84,14 @@ class ResultsAnalyzer(object):
         im = ax.imshow(np.log(self.states_visited+1), cmap='hot', interpolation='nearest')
         f.colorbar(im)
         if save:
-            plt.savefig('log_states_visited.png')
+            plt.savefig('img/log_states_visited.png')
+        plt.show()
+    
+    def plotStepsCounter(self, save=False):
+        f, ax = plt.subplots(figsize=(10,10))
+        ax.set_ylabel('steps taken before termination')
+        ax.set_xlabel('trial number')
+        ax.plot(self.steps_per_trial)
+        if save:
+            plt.savefig('img/steps_per_trials.png')
         plt.show()
