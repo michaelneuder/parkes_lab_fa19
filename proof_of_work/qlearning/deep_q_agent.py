@@ -32,7 +32,7 @@ class DeepQLearningAgent(object):
         # deep q
         self.model = None
         self.memories = []
-        self.training_memory_count = 50
+        self.training_memory_count = 5
     
     def initializeModel(self):
         model = Sequential()
@@ -96,12 +96,16 @@ class DeepQLearningAgent(object):
         memory_subset = np.random.choice(self.memories, self.training_memory_count, replace=False)
         training_data, training_target = [], []
         for memory in memory_subset:
+            print(memory)
+            print(self.model.predict(self.prepareInput(memory['new_state']))[0])
             total_reward = memory['reward']
             total_reward += self.discount * max(self.model.predict(self.prepareInput(memory['new_state']))[0])
             target = self.model.predict(self.prepareInput(memory['current_state']))
-            
+            print(target)
+
             # this modifies the prediction to have new value for the action taken
             target[0][memory['action']] = total_reward
+            print(target)
             training_data.append(memory['current_state'])
             training_target.append(target)
 
@@ -168,7 +172,7 @@ class DeepQLearningAgent(object):
 
 def main():
     qlagent = DeepQLearningAgent(discount=1, alpha=1/3, T=9 , rho=0.33657073974609375)
-    qlagent.runTrial(iterations=int(1000*10))
+    qlagent.runTrial(iterations=int(100))
     qlagent.processPolicy(qlagent.extractPolicy())
     qlagent.plotStatesVisited()
     qlagent.plotLogStatesVisited()

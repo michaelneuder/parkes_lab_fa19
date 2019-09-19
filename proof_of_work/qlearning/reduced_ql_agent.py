@@ -145,7 +145,7 @@ class QLearningAgent(object):
 
 def main():
     qlagent = QLearningAgent(discount=1, alpha=1/3, T=9 , rho=0.33657073974609375)
-    qlagent.runTrial(iterations=int(1000*1000))
+    qlagent.runTrial(iterations=int(1000*10))
     qlagent.processPolicy(qlagent.extractPolicy())
     qlagent.plotStatesVisited()
     qlagent.plotLogStatesVisited()
