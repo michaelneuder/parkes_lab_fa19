@@ -1,5 +1,6 @@
 import copy
 from environmentv0 import Environment
+from keras.models import clone_model
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
@@ -50,7 +51,8 @@ class DeepQLearningAgent(object):
         return np.argmax(self.value_model.predict(util.prepareInput(current_state)))
     
     def syncModels(self):
-        self.target_model = copy.deepcopy(self.value_model)
+        self.target_model = clone_model(self.value_model)
+        self.target_model.set_weights(self.value_model.get_weights())
 
     def learn(self, iterations=10000):
         bar = progressbar.ProgressBar()
@@ -99,31 +101,38 @@ class DeepQLearningAgent(object):
     
     def trainNeuralNet(self):
         memory_subset = np.random.choice(self.memories, self.training_memory_count, replace=False)
-        training_data, training_target = [], []
+        rewards = []
+        current_states = []
+        new_states = []
+        actions = []
+        dones = []
         for memory in memory_subset:
-            total_reward = memory['reward']
+            rewards.append(memory['reward'])
+            current_states.append(memory['current_state'])
+            new_states.append(memory['new_state'])
+            actions.append(memory['action'])
+            dones.append(memory['done'])
             
-            # target net used to predict value of new state
-            if not memory['done']:
-                total_reward += self.discount * max(self.target_model.predict(util.prepareInput(memory['new_state']))[0])
-            target = self.value_model.predict(util.prepareInput(memory['current_state']))
-            # target = np.zeros((1,3))
+        current_state_predictions = self.value_model.predict(util.prepareInputs(current_states))
+        new_state_predictions = self.target_model.predict(util.prepareInputs(new_states))
+
+        for i in range(len(new_state_predictions)):
+            total_reward = rewards[i]
+            if not dones[i]:
+                total_reward += self.discount * max(new_state_predictions[i])
             
-            # clip total reward
+            # clip
             if total_reward > 1:
                 total_reward = 1
             elif total_reward < -1:
                 total_reward = -1
-
-            # this modifies the prediction to have new value for the action taken
-            target[0][memory['action']] = total_reward
-            training_data.append(memory['current_state'])
-            training_target.append(target)
+            
+            current_state_predictions[i][actions[i]] = total_reward
 
         # fiting model --- this is the neural net training 
         self.value_model.fit(
-            np.squeeze(np.asarray(training_data)), 
-            np.squeeze(np.asarray(training_target)), 
+            np.squeeze(np.asarray(current_states)), 
+            np.squeeze(np.asarray(current_state_predictions)), 
             epochs=1, 
             verbose=False)
 

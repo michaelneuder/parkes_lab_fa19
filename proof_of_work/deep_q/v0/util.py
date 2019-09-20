@@ -18,6 +18,9 @@ def createModel(learning_rate):
 def prepareInput(state):
     return np.reshape(np.asarray(state), (1,2))
 
+def prepareInputs(states):
+    return np.asarray(states)
+
 class ResultsAnalyzer(object):
     def __init__(self, model, states_visited, steps, T=9):
         self.value_model = model
@@ -92,6 +95,8 @@ class ResultsAnalyzer(object):
         ax.set_ylabel('steps taken before termination')
         ax.set_xlabel('trial number')
         ax.plot(self.steps_per_trial)
+        ravgs = [sum(self.steps_per_trial[i:i+10])/10. for i in range(len(self.steps_per_trial)-9)]
+        ax.plot(ravgs, 'g--')
         if save:
             plt.savefig('img/steps_per_trials.png')
         plt.show()
