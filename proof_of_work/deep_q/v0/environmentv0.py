@@ -29,7 +29,7 @@ class Environment(object):
             new_state = (0, 1)
         self.current_state = new_state
         # (0, h)
-        return new_state, (0, self.current_state[1]), False
+        return TERMINAL_STATE, (0, self.current_state[1]), True
     
     def getNextStateOverride(self, rand_val):
         if self.current_state[0] <= self.current_state[1]:

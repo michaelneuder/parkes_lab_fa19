@@ -64,11 +64,11 @@ class ResultsAnalyzer(object):
                 action = policy[state_index]
                 assert(action in [0, 1, 2])
                 if action == 0:
-                    results += 'a'
+                    results += '\\ag'
                 elif action == 1:
-                    results += 'o'
+                    results += '\\ob'
                 else:
-                    results += 'w'
+                    results += '\\wt'
                 results += ' & '
             results = results[:-2]
             results += '\\\\ \n'
@@ -91,12 +91,22 @@ class ResultsAnalyzer(object):
         plt.show()
     
     def plotStepsCounter(self, save=False):
-        f, ax = plt.subplots(figsize=(10,10))
+        _f, ax = plt.subplots(figsize=(10,10))
         ax.set_ylabel('steps taken before termination')
         ax.set_xlabel('trial number')
         ax.plot(self.steps_per_trial)
-        ravgs = [sum(self.steps_per_trial[i:i+10])/10. for i in range(len(self.steps_per_trial)-9)]
-        ax.plot(ravgs, 'g--')
+        ravgs = [sum(self.steps_per_trial[i:i+50])/50. for i in range(len(self.steps_per_trial)-49)]
+        ax.plot(ravgs, 'r--')
         if save:
             plt.savefig('img/steps_per_trials.png')
+        plt.show()
+    
+    def plotExploration(self, save=False):
+        f, ax = plt.subplots(figsize=(10,10))
+        exploration = 1 - self.states_visited*0.01
+        exploration[exploration < 0.1] = 0.1
+        im = ax.imshow(exploration, cmap='hot', interpolation='nearest')
+        f.colorbar(im)
+        if save:
+            plt.savefig('img/exploration_rate.png')
         plt.show()

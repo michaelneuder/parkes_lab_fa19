@@ -17,7 +17,7 @@ class DeepQLearningAgent(object):
         self.T = T
         self.rho = rho
         self.exploration_rate = 1
-        self.exploration_decrease = 0.001
+        self.exploration_decrease = 0.0001
         self.min_exploration_rate = 0.1
         
         # deep q
@@ -28,8 +28,9 @@ class DeepQLearningAgent(object):
         self.memories = []
         self.training_memory_count = 32
         self.discount = discount
-        self.update_target_frequency = 100
-        self.max_memory_count = 3000
+        self.update_target_frequency = 1000
+        self.max_memory_count = 10000
+        self.min_memory_count_learn = 1000
         
         # environment
         self.env = Environment(self.alpha, self.T)
@@ -39,13 +40,12 @@ class DeepQLearningAgent(object):
         self.steps_before_done = []
     
     def chooseAction(self, current_state):
-        # finding rate of exploration. Linear decay to minimum.
-        if self.exploration_rate < self.min_exploration_rate:
+        # explore based on number of visits to that state.
+        times_visited = self.states_visited[current_state]
+        current_explore_rate = 1 - times_visited * self.exploration_decrease
+        if current_explore_rate < self.min_exploration_rate:
             current_explore_rate = self.min_exploration_rate
-        else:
-            self.exploration_rate -= self.exploration_decrease
-            current_explore_rate = self.exploration_rate
-
+        
         if np.random.uniform() < current_explore_rate:
             return np.random.choice([0,1,2])
         return np.argmax(self.value_model.predict(util.prepareInput(current_state)))
@@ -84,7 +84,7 @@ class DeepQLearningAgent(object):
             self.memories.append(memory)
 
             # training network
-            if len(self.memories) > self.training_memory_count:
+            if len(self.memories) > self.min_memory_count_learn:
                 self.trainNeuralNet()
                 self.learning_update_count += 1
 
@@ -113,7 +113,8 @@ class DeepQLearningAgent(object):
             actions.append(memory['action'])
             dones.append(memory['done'])
             
-        current_state_predictions = self.value_model.predict(util.prepareInputs(current_states))
+        # current_state_predictions = self.value_model.predict(util.prepareInputs(current_states))
+        current_state_predictions = np.zeros((len(current_states), 3))
         new_state_predictions = self.target_model.predict(util.prepareInputs(new_states))
 
         for i in range(len(new_state_predictions)):
@@ -137,8 +138,8 @@ class DeepQLearningAgent(object):
             verbose=False)
 
 def main():
-    qlagent = DeepQLearningAgent(discount=1, alpha=1/3, T=9 , rho=0.33657073974609375)
-    qlagent.learn(iterations=int(200))
+    qlagent = DeepQLearningAgent(discount=0.99, alpha=0.45, T=9 , rho= 0.6032638549804688)
+    qlagent.learn(iterations=int(10000))
     
     # results
     analyzer = util.ResultsAnalyzer(qlagent.value_model, qlagent.states_visited, qlagent.steps_before_done)
@@ -147,6 +148,7 @@ def main():
     analyzer.plotStatesVisited(save=True)
     analyzer.plotLogStatesVisited(save=True)
     analyzer.plotStepsCounter(save=True)
+    analyzer.plotExploration(save=True)
 
 if __name__ == "__main__":
     main()
