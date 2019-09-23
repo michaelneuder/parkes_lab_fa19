@@ -29,12 +29,12 @@ class Environment(object):
             new_state = (0, 1)
         self.current_state = new_state
         # (0, h)
-        return TERMINAL_STATE, (0, self.current_state[1]), True
+        return new_state, (0, self.current_state[1]), False
     
     def getNextStateOverride(self, rand_val):
         if self.current_state[0] <= self.current_state[1]:
-            self.current_state = TERMINAL_STATE
-            return TERMINAL_STATE, (0, 10000), True
+            self.current_state = (0,1)
+            return (0, 1), (0, 10000), False
         # (a-h, 0)
         if rand_val < self.alpha:
             new_state = (self.current_state[0] - self.current_state[1], 0)

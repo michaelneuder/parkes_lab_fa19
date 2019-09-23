@@ -26,32 +26,14 @@ class ResultsAnalyzer(object):
         self.value_model = model
         self.states_visited = states_visited
         self.steps_per_trial = steps
+        self.T = T
         
-        # initialize state mapping and states
-        self.state_mapping = {}
-        self.states = []
-        count = 0
-        for a in range(T+1):
-            for h in range(T+1):
-                self.state_mapping[(a, h)] = count
-                self.states.append((a, h))
-                count += 1
-    
     def extractPolicy(self):
-        policy = []
-        for state in self.states:
-            a, h = state
-            # any action is legal
-            if a > h:
-                max_action = np.argmax(self.value_model.predict(prepareInput(state))[0])
-            else:
-                arg_sorted = np.argsort(self.value_model.predict(prepareInput(state))[0])
-                # override not legal
-                if arg_sorted[0] == 1:
-                    max_action = arg_sorted[1]
-                else:
-                    max_action = arg_sorted[0]
-            policy.append(max_action)
+        policy = np.zeros((self.T, self.T)) - 1
+        for a in range(self.T):
+            for h in range(self.T):
+                max_action = np.argmax(self.value_model.predict(prepareInput((a,h)))[0])
+                policy[a,h] = max_action
         return policy
 
     def processPolicy(self, policy):
@@ -60,8 +42,7 @@ class ResultsAnalyzer(object):
         for a in range(9):
             results += '{} & '.format(a)
             for h in range(9):
-                state_index = self.state_mapping[(a, h)]
-                action = policy[state_index]
+                action = policy[a, h]
                 assert(action in [0, 1, 2])
                 if action == 0:
                     results += '\\ag'

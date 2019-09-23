@@ -17,14 +17,16 @@ class DeepQLearningAgent(object):
         self.T = T
         self.rho = rho
         self.exploration_rate = 1
-        self.exploration_decrease = 0.0001
+        self.exploration_decrease = 0.000001
         self.min_exploration_rate = 0.1
         
         # deep q
         self.learning_rate = 0.001
         self.value_model = util.createModel(self.learning_rate)
-        self.target_model = copy.deepcopy(self.value_model)
+        self.target_model = clone_model(self.value_model)
+        self.target_model.set_weights(self.value_model.get_weights())
         self.learning_update_count = 0
+        self.max_learning_steps = int(1e5)
         self.memories = []
         self.training_memory_count = 32
         self.discount = discount
@@ -41,9 +43,9 @@ class DeepQLearningAgent(object):
     
     def chooseAction(self, current_state):
         # explore based on number of visits to that state.
-        times_visited = self.states_visited[current_state]
-        current_explore_rate = 1 - times_visited * self.exploration_decrease
-        if current_explore_rate < self.min_exploration_rate:
+        self.exploration_rate -= self.exploration_decrease
+        current_explore_rate = self.exploration_rate
+        if self.exploration_rate < self.min_exploration_rate:
             current_explore_rate = self.min_exploration_rate
         
         if np.random.uniform() < current_explore_rate:
@@ -57,13 +59,15 @@ class DeepQLearningAgent(object):
     def learn(self, iterations=10000):
         bar = progressbar.ProgressBar()
         for _ in bar(range(iterations)):
+            if self.learning_update_count > self.max_learning_steps:
+                break
             self.runTrial()
 
     def runTrial(self):
         done = False
         self.env.reset()
         step_counter = 0
-        while not done:
+        while (not done) and (self.learning_update_count < self.max_learning_steps):
             step_counter += 1
             current_state = self.env.current_state
             self.states_visited[current_state] += 1
@@ -114,7 +118,6 @@ class DeepQLearningAgent(object):
             actions.append(memory['action'])
             dones.append(memory['done'])
             
-        # current_state_predictions = self.value_model.predict(util.prepareInputs(current_states))
         current_state_predictions = np.zeros((len(current_states), 3))
         new_state_predictions = self.target_model.predict(util.prepareInputs(new_states))
 
@@ -140,7 +143,8 @@ class DeepQLearningAgent(object):
 
 def main():
     qlagent = DeepQLearningAgent(discount=0.99, alpha=0.45, T=9 , rho=0.6032638549804688)
-    qlagent.learn(iterations=int(20000))
+    qlagent.learn(iterations=int(5000))
+    print(qlagent.exploration_rate)
     
     # results
     analyzer = util.ResultsAnalyzer(qlagent.value_model, qlagent.states_visited, qlagent.steps_before_done)
@@ -149,7 +153,6 @@ def main():
     analyzer.plotStatesVisited(save=True)
     analyzer.plotLogStatesVisited(save=True)
     analyzer.plotStepsCounter(save=True)
-    analyzer.plotExploration(save=True)
 
 if __name__ == "__main__":
     main()
