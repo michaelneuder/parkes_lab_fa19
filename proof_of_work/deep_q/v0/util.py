@@ -80,7 +80,7 @@ class ResultsAnalyzer(object):
         f.colorbar(im)
         if save:
             plt.savefig('img/states_visited.png')
-        plt.show()
+        # plt.show()
     
     def plotLogStatesVisited(self, save=False):
         f, ax = plt.subplots(figsize=(10,10))
@@ -88,7 +88,7 @@ class ResultsAnalyzer(object):
         f.colorbar(im)
         if save:
             plt.savefig('img/log_states_visited.png')
-        plt.show()
+        # plt.show()
     
     def plotStepsCounter(self, save=False):
         _f, ax = plt.subplots(figsize=(10,10))
@@ -99,7 +99,7 @@ class ResultsAnalyzer(object):
         ax.plot(ravgs, 'r--')
         if save:
             plt.savefig('img/steps_per_trials.png')
-        plt.show()
+        # plt.show()
     
     def plotExploration(self, save=False):
         f, ax = plt.subplots(figsize=(10,10))
@@ -109,4 +109,4 @@ class ResultsAnalyzer(object):
         f.colorbar(im)
         if save:
             plt.savefig('img/exploration_rate.png')
-        plt.show()
+        # plt.show()

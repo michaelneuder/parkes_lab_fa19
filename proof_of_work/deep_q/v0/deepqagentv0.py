@@ -47,7 +47,7 @@ class DeepQLearningAgent(object):
             current_explore_rate = self.min_exploration_rate
         
         if np.random.uniform() < current_explore_rate:
-            return np.random.choice([0,1,2])
+            return np.random.randint(low=0, high=3)
         return np.argmax(self.value_model.predict(util.prepareInput(current_state)))
     
     def syncModels(self):
@@ -100,7 +100,8 @@ class DeepQLearningAgent(object):
         self.steps_before_done.append(step_counter)
     
     def trainNeuralNet(self):
-        memory_subset = np.random.choice(self.memories, self.training_memory_count, replace=False)
+        memory_subset_indeces = np.random.randint(low=0, high=len(self.memories), size=self.training_memory_count)
+        memory_subset = [self.memories[i] for i in memory_subset_indeces]
         rewards = []
         current_states = []
         new_states = []
@@ -138,8 +139,8 @@ class DeepQLearningAgent(object):
             verbose=False)
 
 def main():
-    qlagent = DeepQLearningAgent(discount=0.99, alpha=0.45, T=9 , rho= 0.6032638549804688)
-    qlagent.learn(iterations=int(10000))
+    qlagent = DeepQLearningAgent(discount=0.99, alpha=0.45, T=9 , rho=0.6032638549804688)
+    qlagent.learn(iterations=int(20000))
     
     # results
     analyzer = util.ResultsAnalyzer(qlagent.value_model, qlagent.states_visited, qlagent.steps_before_done)
