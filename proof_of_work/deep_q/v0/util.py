@@ -3,14 +3,15 @@ from keras.layers import Dense
 from keras.optimizers import Adam
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
 
 def evalReward(rho, reward):
     return (1 - rho) * reward[0] - rho * reward[1]
 
 def createModel(learning_rate):
     model = Sequential()
-    model.add(Dense(12, input_dim=2, activation='relu'))
-    model.add(Dense(12, activation='relu'))
+    model.add(Dense(16, input_dim=2, activation='relu'))
+    model.add(Dense(8, activation='relu'))
     model.add(Dense(3, activation='linear'))
     model.compile(loss='mse', optimizer=Adam(lr=learning_rate))
     return model
@@ -22,10 +23,12 @@ def prepareInputs(states):
     return np.asarray(states)
 
 class ResultsAnalyzer(object):
-    def __init__(self, model, states_visited, steps, T=9):
+    def __init__(self, model, states_visited, steps, last_50, sync_points, T=9):
         self.value_model = model
         self.states_visited = states_visited
         self.steps_per_trial = steps
+        self.last_50 = last_50
+        self.sync_points = sync_points
         self.T = T
         
     def extractPolicy(self):
@@ -64,12 +67,10 @@ class ResultsAnalyzer(object):
         # plt.show()
     
     def plotLogStatesVisited(self, save=False):
-        f, ax = plt.subplots(figsize=(10,10))
-        im = ax.imshow(np.log(self.states_visited+1), cmap='hot', interpolation='nearest')
-        f.colorbar(im)
+        plt.clf()
+        sns.heatmap(np.log(self.states_visited+1), annot=True)
         if save:
             plt.savefig('img/log_states_visited.png')
-        # plt.show()
     
     def plotStepsCounter(self, save=False):
         _f, ax = plt.subplots(figsize=(10,10))
@@ -91,3 +92,13 @@ class ResultsAnalyzer(object):
         if save:
             plt.savefig('img/exploration_rate.png')
         # plt.show()
+
+    def plotLast50(self, save=False):
+        _f, ax = plt.subplots(figsize=(10,10))
+        ax.set_ylabel('steps taken before termination')
+        ax.set_xlabel('number of learning updates')
+        ax.plot(self.sync_points, self.last_50)
+        if save:
+            plt.savefig('img/steps_per_sync.png')
+        # plt.show()
+    

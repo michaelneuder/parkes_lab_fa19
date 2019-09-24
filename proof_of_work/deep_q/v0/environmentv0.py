@@ -23,39 +23,36 @@ class Environment(object):
         return self.current_state
     
     def getNextStateAdopt(self, rand_val):
-        if rand_val < self.alpha:
-            new_state = (1, 0)
-        else:
-            new_state = (0, 1)
-        self.current_state = new_state
-        # (0, h)
-        return new_state, (0, self.current_state[1]), False
+        self.current_state = TERMINAL_STATE
+        # reward = (0, h)
+        return TERMINAL_STATE, (0, self.current_state[1]), True
     
     def getNextStateOverride(self, rand_val):
         if self.current_state[0] <= self.current_state[1]:
-            self.current_state = (0,1)
-            return (0, 1), (0, 10000), False
-        # (a-h, 0)
+            self.current_state = TERMINAL_STATE
+            return TERMINAL_STATE, (0, 10000), True
+        # new state = (a-h, 0)
         if rand_val < self.alpha:
             new_state = (self.current_state[0] - self.current_state[1], 0)
-        # (a-h-1, 1)
+        # new state = (a-h-1, 1)
         else:
             new_state = (self.current_state[0] - self.current_state[1] - 1, 1)
-        # (h+1, 0)
+        # reward = (h+1, 0)
         reward = (self.current_state[1]+1, 0)
         self.current_state = new_state
         return new_state, reward, False
     
     def getNextStateWait(self, rand_val):
-        # (a+1, h)
+        # new state = (a+1, h)
         if rand_val < self.alpha:
             new_state = (self.current_state[0] + 1, self.current_state[1])
-        # (a, h+1)
+        # new state = (a, h+1)
         else:
             new_state = (self.current_state[0], self.current_state[1] + 1)
         # check terminal state
         if (new_state[0] == self.T) or (new_state[1] == self.T):
             self.current_state = TERMINAL_STATE
+            # reward = (0, h)
             return TERMINAL_STATE, (0, self.current_state[1]), True
         self.current_state = new_state
         return new_state, (0, 0), False
