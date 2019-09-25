@@ -5,6 +5,7 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
 import matplotlib.pyplot as plt
+plt.style.use('seaborn-muted')
 import numpy as np
 import progressbar
 import time
@@ -27,7 +28,7 @@ class DeepQLearningAgent(object):
         self.target_model = clone_model(self.value_model)
         self.target_model.set_weights(self.value_model.get_weights())
         self.learning_update_count = 0
-        self.max_learning_steps = int(2e5)
+        self.max_learning_steps = int(4e4)
         self.memories = []
         self.training_memory_count = 32
         self.discount = discount
@@ -43,6 +44,8 @@ class DeepQLearningAgent(object):
         self.steps_before_done = []
         self.last_50_steps = []
         self.snyc_points = []
+        self.timing_between_updates = []
+        self.net_training_time = []
 
         # timing
         self.last_target_net_clone = time.time()
@@ -94,7 +97,9 @@ class DeepQLearningAgent(object):
 
             # training network
             if len(self.memories) > self.min_memory_count_learn:
+                start_training = time.time()
                 self.trainNeuralNet()
+                self.net_training_time.append(time.time() - start_training)
                 self.learning_update_count += 1
 
                 # keep memory list finite
@@ -105,6 +110,7 @@ class DeepQLearningAgent(object):
                 if self.learning_update_count % self.update_target_frequency == 0:
                     print('global step: {}. syncing models'.format(self.learning_update_count))
                     update_time = time.time() - self.last_target_net_clone
+                    self.timing_between_updates.append(update_time)
                     print('    last synced: {:.04f} s ago'.format(update_time))
                     updates_remaining = (self.max_learning_steps - self.learning_update_count)/ self.update_target_frequency
                     print('    eta: {:.02f} s'.format(updates_remaining * update_time))
@@ -132,7 +138,10 @@ class DeepQLearningAgent(object):
             dones.append(memory['done'])
             
         current_state_predictions = np.zeros((len(current_states), 3))
-        new_state_predictions = self.target_model.predict(util.prepareInputs(new_states))
+        new_states_prepped = util.prepareInputs(new_states)
+        
+        # new_state_predictions = self.target_model.predict(new_states_prepped)
+        new_state_predictions = [[1,1,1]]
 
         for i in range(len(new_state_predictions)):
             total_reward = rewards[i]
@@ -155,14 +164,16 @@ class DeepQLearningAgent(object):
             verbose=False)
 
 def main():
-    qlagent = DeepQLearningAgent(discount=0.99, alpha=1/3, T=9 , rho=0.33657073974609375)
+    qlagent = DeepQLearningAgent(discount=0.99, alpha=0.45, T=9 , rho=0.6032638549804688)
     qlagent.learn(iterations=int(5000))
     print(qlagent.exploration_rate)
+    plt.plot(qlagent.net_training_time)
+    plt.show()
     
     # results
     analyzer = util.ResultsAnalyzer(
         qlagent.value_model, qlagent.states_visited, qlagent.steps_before_done, 
-        qlagent.last_50_steps, qlagent.snyc_points)
+        qlagent.last_50_steps, qlagent.snyc_points, qlagent.timing_between_updates)
     end_policy = analyzer.extractPolicy()
     analyzer.processPolicy(end_policy)
     analyzer.plotStatesVisited(save=True)
@@ -170,6 +181,7 @@ def main():
     analyzer.plotStepsCounter(save=True)
     analyzer.plotExploration(save=True)
     analyzer.plotLast50(save=True)
+    analyzer.plotTimings(save=True)
 
 if __name__ == "__main__":
     main()

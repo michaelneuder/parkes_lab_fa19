@@ -23,12 +23,13 @@ def prepareInputs(states):
     return np.asarray(states)
 
 class ResultsAnalyzer(object):
-    def __init__(self, model, states_visited, steps, last_50, sync_points, T=9):
+    def __init__(self, model, states_visited, steps, last_50, sync_points, timings, T=9):
         self.value_model = model
         self.states_visited = states_visited
         self.steps_per_trial = steps
         self.last_50 = last_50
         self.sync_points = sync_points
+        self.timing_between_syncs = timings
         self.T = T
         
     def extractPolicy(self):
@@ -102,3 +103,12 @@ class ResultsAnalyzer(object):
             plt.savefig('img/steps_per_sync.png')
         # plt.show()
     
+
+    def plotTimings(self, save=False):
+        _f, ax = plt.subplots(figsize=(10,10))
+        ax.set_ylabel('time since last sync')
+        ax.set_xlabel('number of learning updates')
+        ax.plot(self.sync_points, self.timing_between_syncs)
+        if save:
+            plt.savefig('img/timings_per_sync.png')
+        # plt.show()
