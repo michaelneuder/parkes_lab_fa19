@@ -39,8 +39,8 @@ class Environment(object):
             new_state = (self.current_state[0] - self.current_state[1] - 1, 1)
         # reward = (h+1, 0)
         reward = (self.current_state[1]+1, 0)
-        self.current_state = new_state
-        return np.asarray(new_state), reward, False
+        self.current_state = TERMINAL_STATE
+        return np.asarray(TERMINAL_STATE), reward, True
     
     def getNextStateWait(self, rand_val):
         # new state = (a+1, h)
