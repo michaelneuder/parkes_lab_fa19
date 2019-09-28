@@ -22,42 +22,34 @@ class Environment(object):
         return self.current_state
     
     def getNextStateAdopt(self, rand_val):
-        # reward = (0, h)
-        reward = (0, self.current_state[1])
+        _a, h = self.current_state
         if rand_val < self.alpha:
             self.current_state = (1, 0)
         else:
             self.current_state = (0, 1)
-        return np.asarray(self.current_state), reward
+        return np.asarray(self.current_state), (0, h)
     
     def getNextStateOverride(self, rand_val):
-        if self.current_state[0] <= self.current_state[1]:
+        a, h = self.current_state
+        if a <= h:
             self.current_state = (0, 1)
             return np.asarray(self.current_state), (0, 10)
-        # new state = (a-h, 0)
         if rand_val < self.alpha:
-            self.current_state = (self.current_state[0] - self.current_state[1], 0)
-        # new state = (a-h-1, 1)
+            self.current_state = (a - h, 0)
         else:
-            self.current_state = (self.current_state[0] - self.current_state[1] - 1, 1)
-        # reward = (h+1, 0)
-        reward = (self.current_state[1]+1, 0)
+            self.current_state = (a - h - 1, 1)
+        reward = (h+1, 0)
         return np.asarray(self.current_state), reward
     
     def getNextStateWait(self, rand_val):
-        # new state = (a+1, h)
-        if rand_val < self.alpha:
-            new_state = (self.current_state[0] + 1, self.current_state[1])
-        # new state = (a, h+1)
-        else:
-            new_state = (self.current_state[0], self.current_state[1] + 1)
-        # check terminal state
-        if (new_state[0] == self.T) or (new_state[1] == self.T):
-            # reward = (0, h)
+        a, h = self.current_state
+        if (a+1 == self.T) or (h+1 == self.T):
             return self.getNextStateAdopt(rand_val)
-        self.current_state = new_state
-        # reward = (0, 0)
-        return np.asarray(new_state), (0, 0)
+        if rand_val < self.alpha:
+            self.current_state = (a + 1, h)
+        else:
+            self.current_state = (a, h + 1)
+        return np.asarray(self.current_state), (0, 0)
     
     def takeAction(self, action, rand_val=None):
         assert(action in [0, 1, 2])

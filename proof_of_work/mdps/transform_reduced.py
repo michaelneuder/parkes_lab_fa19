@@ -121,7 +121,7 @@ class SelfishMDP(object):
         print(results)
 
 def main():
-    for alpha in [0.45]:
+    for alpha in [0.35]:
         print(alpha)
         mdp = SelfishMDP(alpha=alpha, T=9, epsilon=10e-5)
         mdp.getRhoBounds()

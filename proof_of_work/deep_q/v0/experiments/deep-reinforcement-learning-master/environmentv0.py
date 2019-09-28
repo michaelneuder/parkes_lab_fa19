@@ -23,14 +23,14 @@ class Environment(object):
         return self.current_state
     
     def getNextStateAdopt(self, rand_val):
-        self.current_state = TERMINAL_STATE
+        self.reset()
         # reward = (0, h)
-        return np.asarray(TERMINAL_STATE), (0, self.current_state[1]), True
+        return np.asarray(self.current_state), (0, self.current_state[1]), True
     
     def getNextStateOverride(self, rand_val):
         if self.current_state[0] <= self.current_state[1]:
             self.current_state = TERMINAL_STATE
-            return np.asarray(TERMINAL_STATE), (0, 10000), True
+            return np.asarray(TERMINAL_STATE), (0, 10), True
         # new state = (a-h, 0)
         if rand_val < self.alpha:
             new_state = (self.current_state[0] - self.current_state[1], 0)
@@ -39,8 +39,8 @@ class Environment(object):
             new_state = (self.current_state[0] - self.current_state[1] - 1, 1)
         # reward = (h+1, 0)
         reward = (self.current_state[1]+1, 0)
-        self.current_state = TERMINAL_STATE
-        return np.asarray(TERMINAL_STATE), reward, True
+        self.current_state = new_state
+        return np.asarray(new_state), reward, True
     
     def getNextStateWait(self, rand_val):
         # new state = (a+1, h)
