@@ -33,7 +33,7 @@ class Environment(object):
     def getNextStateOverride(self, rand_val):
         if self.current_state[0] <= self.current_state[1]:
             self.current_state = (0, 1)
-            return np.asarray(self.current_state), (0, 10000)
+            return np.asarray(self.current_state), (0, 10)
         # new state = (a-h, 0)
         if rand_val < self.alpha:
             self.current_state = (self.current_state[0] - self.current_state[1], 0)
