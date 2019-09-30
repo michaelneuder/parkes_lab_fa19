@@ -117,32 +117,36 @@ class Agent():
             target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)
 
     def extractPolicy(self):
-        policy = np.zeros((9, 9)) - 1
+        self.qnetwork_local.eval()
+        policy = np.zeros((9, 9, 3)) - 1
         for a in range(9):
             for h in range(9):
-                state = torch.from_numpy(np.asarray([a, h])).float().unsqueeze(0).to(device)
-                self.qnetwork_local.eval()
-                with torch.no_grad():
-                    action_values = self.qnetwork_local(state)
-                self.qnetwork_local.train()
-                max_action = np.argmax(action_values.cpu().data.numpy())
-                policy[a,h] = max_action
+                for fork in range(3):
+                    state = torch.from_numpy(np.asarray([a, h, fork])).float().unsqueeze(0).to(device)
+                    with torch.no_grad():
+                        action_values = self.qnetwork_local(state)
+                    max_action = np.argmax(action_values.cpu().data.numpy())
+                    policy[a, h, fork] = max_action
+        self.qnetwork_local.train()
         return policy
 
-    def processPolicy(self, policy):
+    def printPolicy(self, policy):
         results = ''
-        print(policy)
+        # print(policy)
         for a in range(9):
             results += '{} & '.format(a)
             for h in range(9):
-                action = policy[a, h]
-                assert(action in [0, 1, 2])
-                if action == 0:
-                    results += '\\ag'
-                elif action == 1:
-                    results += '\\ob'
-                else:
-                    results += '\\wt'
+                for fork in range(3):
+                    action = policy[a, h, fork]
+                    assert(action in [0, 1, 2, 3])
+                    if action == 0:
+                        results += 'a'
+                    elif action == 1:
+                        results += 'o'
+                    elif action == 2:
+                        results += 'w'
+                    else:
+                        results += 'm'
                 results += ' & '
             results = results[:-2]
             results += '\\\\ \n'
