@@ -3,7 +3,7 @@ import numpy as np
 np.random.seed(0)
 
 class Environment(object):
-    def __init__(self, mining_powers, T, max_blocks=1000, difficulty=0.001):
+    def __init__(self, mining_powers, T, max_blocks=1000, difficulty=0.01):
         # relative mining strengths.
         self.mining_powers = mining_powers
         self.honest_power = 1 - sum(mining_powers)
@@ -15,8 +15,8 @@ class Environment(object):
 
         # chain variables
         self.chain = 'h'
-        self.starting_points = np.zeros(self.num_miners)
-        self.hidden_lengths = np.zeros(self.num_miners)
+        self.starting_points = np.zeros(self.num_miners, dtype=np.int64)
+        self.hidden_lengths = np.zeros(self.num_miners, dtype=np.int64)
         self.difficulty = difficulty
 
     def getState(self, player_index):
@@ -34,10 +34,11 @@ class Environment(object):
         return (len(self.chain), self.starting_points[player_index], self.hidden_lengths[player_index])
     
     def playerOverride(self, player_index):
-        print(self.chain, self.starting_points, self.hidden_lengths)
         self.chain = self.chain[:self.starting_points[player_index] + 1]
         new_blocks = '{}'.format(player_index) * self.hidden_lengths[player_index]
         self.chain += new_blocks
+        self.starting_points[player_index] = len(self.chain)
+        self.hidden_lengths[player_index] = 0
 
     def playerAdopt(self, player_index):
         self.starting_points[player_index] = len(self.chain)
