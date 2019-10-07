@@ -5,6 +5,7 @@ class HonestAgent(object):
         elif state[1] > 0:
             return 'adopt'
         else:
+            print(state)
             raise RuntimeError('invalid state for honest agent to reach')
 
         
