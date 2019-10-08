@@ -1,12 +1,13 @@
 from collections import deque
-from environmentv4 import Environment
-from honestagentv4 import HonestAgent
+from dqnagentv5 import DQNAgent
+from environmentv5 import Environment
+from honestagentv5 import HonestAgent
 import matplotlib.pyplot as plt
 plt.style.use('seaborn-whitegrid')
 import numpy as np
 np.random.seed(0)
 import progressbar as pb
-from selfishagentv4 import SelfishAgent
+from selfishagentv5 import SelfishAgent
 
 
 class Game(object):
@@ -67,8 +68,6 @@ class Game(object):
             self.env.adopt(player_index)
         elif action == 'override':
             self.env.override(player_index)
-        elif action == 'match':
-            self.env.match(player_index)
     
     def plotRewards(self):
         rewards = np.asarray(self.results)

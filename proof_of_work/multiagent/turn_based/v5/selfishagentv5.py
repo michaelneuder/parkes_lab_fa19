@@ -1,5 +1,9 @@
 import numpy as np
 
+ADOPT = 0
+OVERRIDE = 1
+WAIT = 2
+
 class SelfishAgent(object):
     def __init__(self, T):
         self.T = T
@@ -18,16 +22,14 @@ class SelfishAgent(object):
     def act(self, state):
         a, h = state
         if h == self.T:
-            return 'adopt'
+            return ADOPT
         if a == self.T:
-            return 'override'
+            return OVERRIDE
         if h > a:
-            return 'adopt'
-        # if (h == a) and (h == 1):
-        #     return 'match'
+            return ADOPT
         if (h == a-1) and (h >= 1):
-            return 'override'
-        return 'wait'
+            return OVERRIDE
+        return WAIT
     
     def act2(self, state):
         action = self.policy[state]
@@ -36,5 +38,8 @@ class SelfishAgent(object):
         if action == 1:
             return 'override'
         return 'wait'
+    
+    def step(self, state, action, new_state, reward):
+        return
 
         

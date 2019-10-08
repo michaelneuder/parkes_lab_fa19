@@ -1,6 +1,10 @@
 import numpy as np
 np.random.seed(0)
 
+ADOPT = 0
+OVERRIDE = 1
+WAIT = 2
+
 class Environment(object):
     def __init__(self, mining_powers, gammas, T):
         # relative mining strengths.
@@ -15,6 +19,11 @@ class Environment(object):
         self.chain = ''
         self.starting_points = np.zeros(self.num_miners, dtype=np.int64)
         self.hidden_lengths = np.zeros(self.num_miners, dtype=np.int64)
+    
+    def reset(self):
+        self.chain = ''
+        self.starting_points = np.zeros(self.num_miners, dtype=np.int64)
+        self.hidden_lengths = np.zeros(self.num_miners, dtype=np.int64)
 
     def getNextBlockWinner(self):
         winner = np.random.choice(np.arange(len(self.mining_powers)), p=self.mining_powers)
@@ -22,38 +31,44 @@ class Environment(object):
         return winner
     
     def adopt(self, player_index):
+        _a, h = self.getState(player_index)
         self.starting_points[player_index] = len(self.chain)
         self.hidden_lengths[player_index] = 0
+        return self.getState(player_index), (0, h)
+    
+    def wait(self, player_index):
+        a, h = self.getState(player_index)
+        if (a == self.T) or (h == self.T):
+            return self.adopt(player_index)
+        return self.getState(player_index), (0, 0)
     
     def override(self, player_index):
+        a, h = self.getState(player_index)
+        if a <= h:
+            self.starting_points[player_index] = len(self.chain)
+            self.hidden_lengths[player_index] = 0
+            return self.getState(player_index), (0, 10)
+        
         # chop chain to proper length
         self.chain = self.chain[:self.starting_points[player_index]]
-        new_blocks = str(player_index) * self.hidden_lengths[player_index]
+        new_blocks = str(player_index) * a
         self.chain += new_blocks
         self.starting_points[player_index] = len(self.chain)
         self.hidden_lengths[player_index] = 0
-    
-    def match(self, player_index):
-        # \alpha, \gamma * (1 - \alpha), (1 - \gamma) * (1 - \alpha)
-        new_probs = [self.mining_powers[1], self.gammas[1] * self.mining_powers[0], self.gammas[0] * self.mining_powers[0]]
-        next_block = np.random.choice(np.arange(len(new_probs)), p = new_probs)
-        # print(self.chain)
-        # print('match: new block', next_block)
-        if next_block == 0:
-            self.hidden_lengths[1] += 1
-            self.override(1)
-        elif next_block == 1:
-            self.hidden_lengths[1] += 1
-            self.override(1)
-            self.chain = self.chain[:-1]
-            self.chain += '0'
-        else:
-            self.chain += '0'
-            self.adopt(1)
-        # print(self.chain)
+        return self.getState(player_index), (a, 0)
 
     def getState(self, player_index):
         return (self.hidden_lengths[player_index], len(self.chain)-self.starting_points[player_index])
+    
+    def takeActionPlayer(self, player_index, action):
+        if action == ADOPT:
+            return self.adopt(player_index)
+        elif action == OVERRIDE:
+            return self.override(player_index)
+        elif action == WAIT:
+            return self.wait(player_index)
+        else:
+            raise KeyError('{} is not an action'.format(action))
 
 if __name__ == "__main__":
     powers = [0.55, 0.45]

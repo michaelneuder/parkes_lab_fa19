@@ -30,7 +30,7 @@ class Game(object):
     def play(self):
         bar = pb.ProgressBar()
         for i in bar(range(self.block_count)):
-            self.runTurn()
+            self.runTurn(0)
             # if i % 100 == 1:
             #     self.collectResults(i)
     
@@ -89,8 +89,8 @@ class Game(object):
 def main():
     selfish_rewards = []
     powers = np.arange(0.025, 0.5, 0.025)
-    for selfish_power in [1/3, 0.35, 0.375, 0.4, 0.425, 0.45, 0.475]:
-        game = Game([1 - selfish_power, selfish_power], [0, 1], [1, 0], T=95, block_count=int(2e5))
+    for selfish_power in [0.45]:
+        game = Game([1 - selfish_power, selfish_power], [0, 1], [1, 0], T=9, block_count=int(3e5))
         game.play()
         chain = game.env.chain
         for player in range(len(game.mining_powers)):
