@@ -23,8 +23,8 @@ class SelfishAgent(object):
             return 'override'
         if h > a:
             return 'adopt'
-        if (h == a) and (h == 1):
-            return 'match'
+        # if (h == a) and (h == 1):
+        #     return 'match'
         if (h == a-1) and (h >= 1):
             return 'override'
         return 'wait'
