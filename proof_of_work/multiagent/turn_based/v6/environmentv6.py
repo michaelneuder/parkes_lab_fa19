@@ -8,14 +8,8 @@ class Environment(object):
         self.current_state = None
         self.mining_cost = mining_cost
 
-    def reset(self, rand_val=None):
-        # resents env to one of original states and returns the state.
-        if not rand_val:
-            rand_val = np.random.uniform()
-        if rand_val < self.alpha:
-            self.current_state = (1, 0)
-        else:
-            self.current_state = (0, 1)
+    def reset(self):
+        self.current_state = (0, 0)
         return self.current_state
     
     def getNextStateAdopt(self, rand_val):
@@ -32,7 +26,7 @@ class Environment(object):
     
     def getNextStateMine(self, rand_val):
         a, h = self.current_state
-        if (a+1 == self.T) or (h+1 == self.T):
+        if (a == self.T) or (h == self.T):
             return self.getNextStateAdopt(rand_val)
         if rand_val < self.alpha:
             self.current_state = (a + 1, h)
