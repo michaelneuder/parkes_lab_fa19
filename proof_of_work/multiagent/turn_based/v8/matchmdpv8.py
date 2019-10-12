@@ -100,6 +100,11 @@ class MatchMDP(object):
         rvi = mdptoolbox.mdp.RelativeValueIteration(self.transitions, self.rewards, self.epsilon/8)
         rvi.run()
         return rvi.policy
+    
+    def getOptValue(self):
+        rvi = mdptoolbox.mdp.RelativeValueIteration(self.transitions, self.rewards, self.epsilon/8)
+        rvi.run()
+        return rvi.average_reward
 
     def printPolicy(self, policy):    
         results = ''
@@ -131,6 +136,12 @@ class MatchMDP(object):
         self.initMatrices()
         self.populateMatrices()
         return self.getOptPolicy()
+    
+    def solveWithValue(self):
+        self.initMDPHelpers()
+        self.initMatrices()
+        self.populateMatrices()
+        return self.getOptValue()
 
 if __name__ == "__main__":
     match_mdp = MatchMDP(alpha = 0.4, gamma = 0.5, T = 8, mining_cost = 0.75)
