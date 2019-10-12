@@ -1,17 +1,16 @@
 import numpy as np
-np.random.seed(0)
 
 IRRELEVANT = 0
 RELEVANT = 1
 ACTIVE = 2
 
 class Environment(object):
-    def __init__(self, alpha, gamma, T, mining_cost=0.5):
+    def __init__(self, alpha, gamma, T, mining_cost):
         self.alpha = alpha
         self.gamma = gamma
         self.T = T
-        self.current_state = None
         self.mining_cost = mining_cost
+        self.current_state = None
 
     def reset(self):
         self.current_state = (0, 0, IRRELEVANT)
@@ -22,48 +21,44 @@ class Environment(object):
         return np.asarray(self.current_state), 0
     
     def getNextStateOverride(self, rand_val):
-        a, h, _fork = self.current_state
+        a, h, fork = self.current_state
         if a <= h:
-            self.current_state = (0, 0, IRRELEVANT)
-            return np.asarray(self.current_state), -100
+            raise RuntimeError('Illegal Override, state={}'.format((a, h, fork)))
         self.current_state = (a - h - 1, 0, IRRELEVANT)
         return np.asarray(self.current_state), h + 1
     
     def getNextStateMine(self, rand_val):
         a, h, fork = self.current_state
-        if (a == self.T) or (h == self.T):
-            return self.getNextStateAdopt(rand_val)
-        if fork == ACTIVE:
-            assert(a > h)
-            return self.backendMatchMine(rand_val)
-        if rand_val < self.alpha:
-            self.current_state = (a + 1, h, IRRELEVANT)
+        if (fork != ACTIVE) and (a < self.T) and (h < self.T):
+            if rand_val < self.alpha:
+                self.current_state = (a + 1, h, IRRELEVANT)
+            else:
+                self.current_state = (a, h + 1, RELEVANT)
+            return np.asarray(self.current_state), -1*self.alpha*self.mining_cost
+        elif (fork == ACTIVE) and (a > h) and (h > 0) and (a < self.T) and (h < self.T):
+            return self.backendMatchMine()
         else:
-            self.current_state = (a, h + 1, RELEVANT)
-        return np.asarray(self.current_state), -1*self.alpha*self.mining_cost
+            raise RuntimeError('Illegal Mine, state={}'.format((a, h, fork)))
     
     def getNextStateMatch(self, rand_val):
         a, h, fork = self.current_state
-        if (a < h) or (fork != RELEVANT):
-            self.current_state = (0, 1, IRRELEVANT)
-            return np.asarray(self.current_state), -100 
-        return self.backendMatchMine(rand_val)
+        if (fork == RELEVANT) and (a >= h) and (h > 0) and (a < self.T) and (h < self.T):
+            return self.backendMatchMine()
+        raise RuntimeError('Illegal Match, state={}'.format((a, h, fork)))
     
-    def backendMatchMine(self, rand_val):
+    def backendMatchMine(self):
         a, h, _fork = self.current_state
-        assert(a >= h)
-        assert(h > 0)
-        assert(a < self.T)
-        assert(h < self.T)
-        reward = -1*self.alpha*self.mining_cost
-        if rand_val < self.alpha:
+        outcome = np.random.choice([0, 1, 2], 
+                                   p=[self.alpha, self.gamma*(1 - self.alpha), (1 - self.gamma) * (1 - self.alpha)])
+        if outcome == 0:
             self.current_state = (a + 1, h, ACTIVE)
-        elif rand_val < self.gamma * (1 - self.alpha):
+            return np.asarray(self.current_state), -1*self.alpha*self.mining_cost
+        elif outcome == 1:
             self.current_state = (a - h, 1, RELEVANT)
-            reward += h
+            return np.asarray(self.current_state), h-1*self.alpha*self.mining_cost
         else: 
             self.current_state = (a, h+1, RELEVANT)
-        return np.asarray(self.current_state), reward
+            return np.asarray(self.current_state), -1*self.alpha*self.mining_cost
     
     def takeAction(self, action, rand_val=None):
         assert(action in [0, 1, 2, 3])
@@ -77,12 +72,3 @@ class Environment(object):
             return self.getNextStateMine(rand_val)
         else:
             return self.getNextStateMatch(rand_val)
-        
-def main():
-    env = Environment(alpha=0.35, gamma=0.5, T=9)
-    print(env.reset())
-    print(env.takeAction(2, 0.01))
-    print(env.takeAction(1, 0.01))
-
-if __name__ == "__main__":
-    main() 
