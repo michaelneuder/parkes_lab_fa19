@@ -15,11 +15,12 @@ RELEVANT = 1
 ACTIVE = 2
 
 class OriginalMDP(object):
-    def __init__(self, alpha, gamma, T, epsilon=10e-6): 
+    def __init__(self, alpha, gamma, T, mining_cost, epsilon=10e-6): 
         # params
         self.alpha = alpha
         self.gamma = gamma
         self.T = T
+        self.mining_cost = mining_cost
         self.epsilon = epsilon
         
         # game
@@ -61,13 +62,16 @@ class OriginalMDP(object):
             # adopt rewards
             self.reward_honest[ADOPT][state_index, self.state_mapping[1, 0, IRRELEVANT]] = h
             self.reward_honest[ADOPT][state_index, self.state_mapping[0, 1, IRRELEVANT]] = h
+            self.reward_selfish[ADOPT][state_index, self.state_mapping[1, 0, IRRELEVANT]] = -1 * self.alpha * self.mining_cost 
+            self.reward_selfish[ADOPT][state_index, self.state_mapping[0, 1, IRRELEVANT]] = -1 * self.alpha * self.mining_cost
+
 
             # override
             if a > h:
                 self.transitions[OVERRIDE][state_index, self.state_mapping[a-h, 0, IRRELEVANT]] = self.alpha
-                self.reward_selfish[OVERRIDE][state_index, self.state_mapping[a-h, 0, IRRELEVANT]] = h+1
+                self.reward_selfish[OVERRIDE][state_index, self.state_mapping[a-h, 0, IRRELEVANT]] = h+1 - self.alpha * self.mining_cost
                 self.transitions[OVERRIDE][state_index, self.state_mapping[a-h-1, 1, RELEVANT]] = 1 - self.alpha
-                self.reward_selfish[OVERRIDE][state_index, self.state_mapping[a-h-1, 1, RELEVANT]] = h+1
+                self.reward_selfish[OVERRIDE][state_index, self.state_mapping[a-h-1, 1, RELEVANT]] = h+1 - self.alpha * self.mining_cost
             else:
                 self.transitions[OVERRIDE][state_index, 0] = 1
                 self.reward_honest[OVERRIDE][state_index, 0] = 10000
@@ -76,11 +80,15 @@ class OriginalMDP(object):
             if (fork != ACTIVE) and (a < self.T) and (h < self.T):
                 self.transitions[WAIT][state_index, self.state_mapping[a+1, h, IRRELEVANT]] = self.alpha
                 self.transitions[WAIT][state_index, self.state_mapping[a, h+1, RELEVANT]] = 1 - self.alpha
+                self.reward_selfish[WAIT][state_index, self.state_mapping[a+1, h, IRRELEVANT]] = -1 * self.alpha * self.mining_cost
+                self.reward_selfish[WAIT][state_index, self.state_mapping[a, h+1, RELEVANT]] = -1 * self.alpha * self.mining_cost
             elif (fork == ACTIVE) and (a > h) and (h > 0) and (a < self.T) and (h < self.T): 
                 self.transitions[WAIT][state_index, self.state_mapping[a+1, h, ACTIVE]] = self.alpha
+                self.reward_selfish[WAIT][state_index, self.state_mapping[a+1, h, ACTIVE]] = -1 * self.alpha * self.mining_cost
                 self.transitions[WAIT][state_index, self.state_mapping[a-h, 1, RELEVANT]] = self.gamma*(1-self.alpha)
-                self.reward_selfish[WAIT][state_index, self.state_mapping[a-h, 1, RELEVANT]] = h
+                self.reward_selfish[WAIT][state_index, self.state_mapping[a-h, 1, RELEVANT]] = h - self.alpha * self.mining_cost
                 self.transitions[WAIT][state_index, self.state_mapping[a, h+1, RELEVANT]] = (1-self.gamma)*(1-self.alpha)
+                self.reward_selfish[WAIT][state_index, self.state_mapping[a, h+1, RELEVANT]] = -1 * self.alpha * self.mining_cost
             else:
                 self.transitions[WAIT][state_index, 0] = 1
                 self.reward_honest[WAIT][state_index, 0] = 10000
@@ -88,9 +96,11 @@ class OriginalMDP(object):
             # match
             if (fork == RELEVANT) and (a >= h) and (h > 0) and (a < self.T) and (h < self.T):
                 self.transitions[MATCH][state_index, self.state_mapping[a+1, h, ACTIVE]] = self.alpha
+                self.reward_selfish[MATCH][state_index, self.state_mapping[a+1, h, ACTIVE]] = -1 * self.alpha * self.mining_cost
                 self.transitions[MATCH][state_index, self.state_mapping[a-h, 1, RELEVANT]] = self.gamma*(1-self.alpha)
-                self.reward_selfish[MATCH][state_index, self.state_mapping[a-h, 1, RELEVANT]] = h
+                self.reward_selfish[MATCH][state_index, self.state_mapping[a-h, 1, RELEVANT]] = h - self.alpha * self.mining_cost
                 self.transitions[MATCH][state_index, self.state_mapping[a, h+1, RELEVANT]] = (1-self.gamma)*(1-self.alpha)
+                self.reward_selfish[MATCH][state_index, self.state_mapping[a, h+1, RELEVANT]] = -1 * self.alpha * self.mining_cost
             else:
                 self.transitions[MATCH][state_index, 0] = 1
                 self.reward_honest[MATCH][state_index, 0] = 10000
@@ -138,7 +148,8 @@ if __name__ == "__main__":
     alpha = 0.4
     gamma = 0.5
     T = 8
-    original_mdp = OriginalMDP(alpha=alpha, gamma=gamma, T=T, epsilon=10e-5)
+    mining_cost = 0.82
+    original_mdp = OriginalMDP(alpha=alpha, gamma=gamma, T=T, mining_cost=mining_cost, epsilon=10e-5)
     original_mdp.initMDPHelpers()
     original_mdp.initMatrices()
     original_mdp.populateMatrices()
