@@ -1,9 +1,9 @@
-import mdptoolbox
 import matplotlib.pyplot as plt
 import numpy as np
 import progressbar as pb
 import scipy.sparse as ss
 import seaborn as sns
+from valueiterationv9 import value_iteration
 import warnings
 warnings.filterwarnings('ignore', category=ss.SparseEfficiencyWarning)
 
@@ -97,10 +97,9 @@ class CostMDP(object):
                 self.rewards[MATCH][state_index, 0] = -10000
     
     def getOptPolicy(self):
-        rvi = mdptoolbox.mdp.ValueIteration(self.transitions, self.rewards, 1)
-        rvi.run()
-        # print(rvi.average_reward)
-        return rvi.policy
+        policy, _ = value_iteration(
+            self.action_count, len(self.states), self.transitions, self.rewards)
+        return policy
 
     def printPolicy(self, policy):    
         results = ''
