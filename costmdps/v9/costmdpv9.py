@@ -97,9 +97,9 @@ class CostMDP(object):
                 self.rewards[MATCH][state_index, 0] = -10000
     
     def getOptPolicy(self):
-        rvi = mdptoolbox.mdp.ValueIteration(self.transitions, self.rewards, 1)
+        rvi = mdptoolbox.mdp.RelativeValueIteration(self.transitions, self.rewards, self.epsilon/8)
         rvi.run()
-        # print(rvi.average_reward)
+        print(rvi.average_reward)
         return rvi.policy
 
     def printPolicy(self, policy):    

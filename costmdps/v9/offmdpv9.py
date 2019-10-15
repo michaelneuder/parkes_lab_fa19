@@ -17,7 +17,7 @@ IRRELEVANT = 0
 RELEVANT = 1
 ACTIVE = 2
 
-class CostMDP(object):
+class OffMDP(object):
     def __init__(self, alpha, gamma, T, mining_cost, epsilon=10e-6):
         # params
         self.alpha = alpha
@@ -27,7 +27,7 @@ class CostMDP(object):
         self.epsilon = epsilon
 
         # game
-        self.action_count = 5
+        self.action_count = 4
         self.fork_count = 3
         self.state_count = (T + 1) * (T + 1) * self.fork_count
 
@@ -92,21 +92,22 @@ class CostMDP(object):
                 self.transitions[MATCH][state_index, 0] = 1
                 self.rewards[MATCH][state_index, 0] = -10000
 
-            # off
-            if (fork != ACTIVE) and (h < self.T):
-                self.transitions[OFF][state_index, self.state_mapping[a, h+1, fork]] = 1
-            elif (fork == ACTIVE) and (a > h) and (h > 0) and (h < self.T):
-                self.transitions[OFF][state_index, self.state_mapping[a-h, 1, RELEVANT]] = self.gamma
-                self.transitions[OFF][state_index, self.state_mapping[a, h+1, RELEVANT]] = 1-self.gamma
-                self.rewards[OFF][state_index, self.state_mapping[a-h, 1, RELEVANT]] = h
-                self.rewards[OFF][state_index, self.state_mapping[a, h+1, RELEVANT]] = 0
-            else:
-                self.transitions[OFF][state_index, 0] = 1
-                self.rewards[OFF][state_index, 0] = -10000
+            # # off
+            # if (fork != ACTIVE) and (h < self.T):
+            #     self.transitions[OFF][state_index, self.state_mapping[a, h+1, fork]] = 1
+            # elif (fork == ACTIVE) and (a > h) and (h > 0) and (h < self.T):
+            #     self.transitions[OFF][state_index, self.state_mapping[a-h, 1, RELEVANT]] = self.gamma
+            #     self.transitions[OFF][state_index, self.state_mapping[a, h+1, RELEVANT]] = 1-self.gamma
+            #     self.rewards[OFF][state_index, self.state_mapping[a-h, 1, RELEVANT]] = h
+            #     self.rewards[OFF][state_index, self.state_mapping[a, h+1, RELEVANT]] = 0
+            # else:
+            #     self.transitions[OFF][state_index, 0] = 1
+            #     self.rewards[OFF][state_index, 0] = -10000
             
     def getOptPolicy(self):
-        rvi = mdptoolbox.mdp.ValueIteration(self.transitions, self.rewards, 1)
+        rvi = mdptoolbox.mdp.RelativeValueIteration(self.transitions, self.rewards, self.epsilon/8)
         rvi.run()
+        print(rvi.average_reward)
         return rvi.policy
 
     def printPolicy(self, policy):    
@@ -147,9 +148,9 @@ if __name__ == "__main__":
     gamma = 0.5
     T = 8
     mining_cost = 0.5
-    cost_mdp = CostMDP(alpha = alpha, gamma = gamma, T = T, mining_cost = mining_cost)
-    cost_mdp.initMDPHelpers()
-    cost_mdp.initMatrices()
-    cost_mdp.populateMatrices()
-    policy = cost_mdp.getOptPolicy()
-    cost_mdp.printPolicy(policy)
+    off_mdp = OffMDP(alpha = alpha, gamma = gamma, T = T, mining_cost = mining_cost)
+    off_mdp.initMDPHelpers()
+    off_mdp.initMatrices()
+    off_mdp.populateMatrices()
+    policy = off_mdp.getOptPolicy()
+    off_mdp.printPolicy(policy)
