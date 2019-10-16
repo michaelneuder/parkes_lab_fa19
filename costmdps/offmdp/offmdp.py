@@ -11,12 +11,13 @@ ADOPT = 0
 OVERRIDE = 1
 MINE = 2
 MATCH = 3
+OFF = 4
 
 IRRELEVANT = 0
 RELEVANT = 1
 ACTIVE = 2
 
-class CostMDP(object):
+class OffMDP(object):
     def __init__(self, alpha, gamma, T, mining_cost, epsilon=10e-6):
         # params
         self.alpha = alpha
@@ -73,7 +74,7 @@ class CostMDP(object):
                 self.transitions[MINE][state_index, self.state_mapping[a, h+1, RELEVANT]] = (1 - self.alpha) 
                 self.rewards[MINE][state_index, self.state_mapping[a+1, h, IRRELEVANT]] = -1 * self.alpha * self.mining_cost
                 self.rewards[MINE][state_index, self.state_mapping[a, h+1, RELEVANT]] = -1 * self.alpha * self.mining_cost        
-            elif (fork == ACTIVE) and (a > h) and (h > 0) and (a < self.T) and (h < self.T):
+            elif (fork == ACTIVE) and (a >= h) and (h > 0) and (a < self.T) and (h < self.T):
                 self.transitions[MINE][state_index, self.state_mapping[a+1, h, ACTIVE]] = self.alpha
                 self.transitions[MINE][state_index, self.state_mapping[a-h, 1, RELEVANT]] = (1 - self.alpha) * self.gamma
                 self.transitions[MINE][state_index, self.state_mapping[a, h+1, RELEVANT]] = (1 - self.alpha) * (1 - self.gamma)
@@ -86,16 +87,23 @@ class CostMDP(object):
                 
             # match 
             if (fork == RELEVANT) and (a >= h) and (h > 0) and (a < self.T) and (h < self.T):
-                self.transitions[MATCH][state_index, self.state_mapping[a+1, h, ACTIVE]] = self.alpha
-                self.transitions[MATCH][state_index, self.state_mapping[a-h, 1, RELEVANT]] = (1 - self.alpha) * self.gamma
-                self.transitions[MATCH][state_index, self.state_mapping[a, h+1, RELEVANT]] = (1 - self.alpha) * (1 - self.gamma)
-                self.rewards[MATCH][state_index, self.state_mapping[a+1, h, ACTIVE]] = -1 * self.alpha * self.mining_cost
-                self.rewards[MATCH][state_index, self.state_mapping[a-h, 1, RELEVANT]] = h - self.alpha * self.mining_cost
-                self.rewards[MATCH][state_index, self.state_mapping[a, h+1, RELEVANT]] = -1 * self.alpha * self.mining_cost
+                self.transitions[MATCH][state_index, self.state_mapping[a, h, ACTIVE]] = 1
             else:
                 self.transitions[MATCH][state_index, 0] = 1
                 self.rewards[MATCH][state_index, 0] = -10000
-    
+
+            # # off
+            # if (fork != ACTIVE) and (h < self.T):
+            #     self.transitions[OFF][state_index, self.state_mapping[a, h+1, fork]] = 1
+            # elif (fork == ACTIVE) and (a > h) and (h > 0) and (h < self.T):
+            #     self.transitions[OFF][state_index, self.state_mapping[a-h, 1, RELEVANT]] = self.gamma
+            #     self.transitions[OFF][state_index, self.state_mapping[a, h+1, RELEVANT]] = 1-self.gamma
+            #     self.rewards[OFF][state_index, self.state_mapping[a-h, 1, RELEVANT]] = h
+            #     self.rewards[OFF][state_index, self.state_mapping[a, h+1, RELEVANT]] = 0
+            # else:
+            #     self.transitions[OFF][state_index, 0] = 1
+            #     self.rewards[OFF][state_index, 0] = -10000
+            
     def getOptPolicy(self):
         rvi = mdptoolbox.mdp.RelativeValueIteration(self.transitions, self.rewards, self.epsilon/8)
         rvi.run()
@@ -105,7 +113,6 @@ class CostMDP(object):
     def printPolicy(self, policy):    
         results = ''
         for a in range(9):
-            results += str(a) + ' & '
             for h in range(9):
                 for fork in range(3):
                     state_index = self.state_mapping[(a, h, fork)]
@@ -118,10 +125,11 @@ class CostMDP(object):
                         results += 'w'
                     elif action == 3:
                         results += 'm'
+                    elif action == 4:
+                        results += 'f'
                     else:
                         raise RuntimeError('invalid action')
                 results += ' & '
-            results = results [:-2]
             results += '\\\\ \n'
         print(results)
     
@@ -139,10 +147,10 @@ if __name__ == "__main__":
     alpha = 0.4
     gamma = 0.5
     T = 8
-    mining_cost = 0.5
-    cost_mdp = CostMDP(alpha = alpha, gamma = gamma, T = T, mining_cost = mining_cost)
-    cost_mdp.initMDPHelpers()
-    cost_mdp.initMatrices()
-    cost_mdp.populateMatrices()
-    policy = cost_mdp.getOptPolicy()
-    cost_mdp.printPolicy(policy)
+    mining_cost = 0.0
+    off_mdp = OffMDP(alpha = alpha, gamma = gamma, T = T, mining_cost = mining_cost)
+    off_mdp.initMDPHelpers()
+    off_mdp.initMatrices()
+    off_mdp.populateMatrices()
+    policy = off_mdp.getOptPolicy()
+    off_mdp.printPolicy(policy)
