@@ -39,7 +39,7 @@ for mining_cost in np.arange(0,1.1, 0.1):
             cumulative_reward += reward
             
 
-    print(cumulative_reward, matches,  cumulative_reward / (simulated_block_count + extra_actions) )
+    print(cumulative_reward, extra_actions,  cumulative_reward / (simulated_block_count + extra_actions) )
     print('-----')
     print(mining_cost, cumulative_reward, cumulative_reward / simulated_block_count)
     results.append(cumulative_reward / simulated_block_count)
