@@ -9,8 +9,8 @@ alpha = 0.4
 gamma = 0.5
 T = 8
 
-honest = 0
-optimal = 1
+honest = 1
+optimal = 0
 
 if optimal:
     results = []
@@ -37,13 +37,14 @@ if optimal:
 
 if honest:
     results = []
-    for mining_cost in np.arange(0,1.1, 0.1):
-    # for mining_cost in [0.5]:
+    # for mining_cost in np.arange(0,1.1, 0.1):
+    for mining_cost in [0.9]:
         honest_agent = HonestAgent()
         env = Environment(alpha=alpha, gamma=gamma, T=T, mining_cost=mining_cost)
         
         tuple_mdp = OriginalTupleMDP(alpha=alpha, gamma=gamma, T=T, mining_cost=mining_cost)
         rho, opt_policy = tuple_mdp.solveWithPolicy()
+        print('rho=', rho)
 
         simulated_block_count = int(1e6)
         env.reset()
@@ -53,6 +54,7 @@ if honest:
             current_state = env.current_state
             action = honest_agent.act(current_state)
             new_state, reward = env.takeAction(action)
+            print(rho, reward, honest_agent.evalRewardTuple(reward, rho))
             cumulative_reward += honest_agent.evalRewardTuple(reward, rho)            
         print(mining_cost, cumulative_reward, cumulative_reward / simulated_block_count)
         results.append(cumulative_reward / simulated_block_count)
