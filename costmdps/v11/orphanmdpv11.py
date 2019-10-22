@@ -34,7 +34,6 @@ class OriginalTupleMDP(object):
         # matrices
         self.transitions = []
         self.reward_selfish = []
-        self.reward_honest = []
 
     def initMDPHelpers(self):
         count = 0
@@ -49,7 +48,6 @@ class OriginalTupleMDP(object):
         for _ in range(self.action_count):
             self.transitions.append(ss.csr_matrix(np.zeros(shape=(self.state_count, self.state_count))))
             self.reward_selfish.append(ss.csr_matrix(np.zeros(shape=(self.state_count, self.state_count))))
-            self.reward_honest.append(ss.csr_matrix(np.zeros(shape=(self.state_count, self.state_count))))
     
     def populateMatrices(self):
         for state_index in range(self.state_count):
@@ -58,18 +56,16 @@ class OriginalTupleMDP(object):
             # adopt
             self.transitions[ADOPT][state_index, self.state_mapping[1, 0, IRRELEVANT]] = self.alpha
             self.transitions[ADOPT][state_index, self.state_mapping[0, 1, IRRELEVANT]] = 1 - self.alpha
-            self.reward_honest[ADOPT][state_index, self.state_mapping[1, 0, IRRELEVANT]] = h
-            self.reward_honest[ADOPT][state_index, self.state_mapping[0, 1, IRRELEVANT]] = h
             
             # override
             if a > h:
                 self.transitions[OVERRIDE][state_index, self.state_mapping[a-h, 0, IRRELEVANT]] = self.alpha
                 self.transitions[OVERRIDE][state_index, self.state_mapping[a-h-1, 1, RELEVANT]] = 1 - self.alpha
-                self.reward_selfish[OVERRIDE][state_index, self.state_mapping[a-h, 0, IRRELEVANT]] = h + 1
-                self.reward_selfish[OVERRIDE][state_index, self.state_mapping[a-h-1, 1, RELEVANT]] = h + 1
+                self.reward_selfish[OVERRIDE][state_index, self.state_mapping[a-h, 0, IRRELEVANT]] = h
+                self.reward_selfish[OVERRIDE][state_index, self.state_mapping[a-h-1, 1, RELEVANT]] = h
             else:
                 self.transitions[OVERRIDE][state_index, 0] = 1
-                self.reward_honest[OVERRIDE][state_index, 0] = 10000
+                self.reward_selfish[OVERRIDE][state_index, 0] = -10000
 
             # wait
             if (fork != ACTIVE) and (a < self.T) and (h < self.T):
@@ -82,7 +78,7 @@ class OriginalTupleMDP(object):
                 self.reward_selfish[WAIT][state_index, self.state_mapping[a-h, 1, RELEVANT]] = h
             else:
                 self.transitions[WAIT][state_index, 0] = 1
-                self.reward_honest[WAIT][state_index, 0] = 10000
+                self.reward_selfish[WAIT][state_index, 0] = -10000
 
             # match
             if (fork == RELEVANT) and (a >= h) and (h > 0) and (a < self.T) and (h < self.T):
@@ -92,25 +88,14 @@ class OriginalTupleMDP(object):
                 self.reward_selfish[MATCH][state_index, self.state_mapping[a-h, 1, RELEVANT]] = h
             else:
                 self.transitions[MATCH][state_index, 0] = 1
-                self.reward_honest[MATCH][state_index, 0] = 10000
+                self.reward_selfish[MATCH][state_index, 0] = -10000
 
-    def getRhoBounds(self):
-        low = 0; high = 1
-        while (high - low) > self.epsilon / 8:
-            rho = (low + high) / 2
-            print(low, high, rho)
-            total_reward = []
-            for i in range(self.action_count):
-                total_reward.append((1-rho)*self.reward_selfish[i] - rho*self.reward_honest[i])
-            rvi = mdptoolbox.mdp.RelativeValueIteration(self.transitions, total_reward, self.epsilon/8)
-            rvi.run()
-            if rvi.average_reward > 0:
-                low = rho
-            else:
-                high = rho
+    def getOptPolicy(self):
+        rvi = mdptoolbox.mdp.RelativeValueIteration(self.transitions, self.reward_selfish, self.epsilon/8)
+        rvi.run()
         opt_policy = rvi.policy
         print(rvi.average_reward)
-        return rho, opt_policy
+        return opt_policy
         
     def printPolicy(self, policy):
         results = ''
@@ -142,7 +127,7 @@ class OriginalTupleMDP(object):
         self.initMDPHelpers()
         self.initMatrices()
         self.populateMatrices()
-        return self.getRhoBounds()
+        return self.getOptPolicy()
     
     def getAction(self, policy, state):
         state_index = self.state_mapping[state]
@@ -156,5 +141,5 @@ if __name__ == "__main__":
     original_mdp.initMDPHelpers()
     original_mdp.initMatrices()
     original_mdp.populateMatrices()
-    _, opt_policy = original_mdp.getRhoBounds()
+    opt_policy = original_mdp.getOptPolicy()
     original_mdp.printPolicy(opt_policy)
