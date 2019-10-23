@@ -53,7 +53,6 @@ class ReducedMDP(object):
             self.reward_selfish[ADOPT][state_index, self.state_mapping[1, 0]] = - self.alpha * self.mining_cost
             self.reward_selfish[ADOPT][state_index, self.state_mapping[0, 1]] = - self.alpha * self.mining_cost
             
-
             # override
             if a > h:
                 self.transitions[OVERRIDE][state_index, self.state_mapping[a-h, 0]] = self.alpha
@@ -115,9 +114,8 @@ class ReducedMDP(object):
 
 if __name__ == "__main__":
     alpha = 0.4
-    gamma = 0.5
     T = 8
-    mining_cost = 1
+    mining_cost = 0.4
     original_mdp = ReducedMDP(alpha=alpha, T=T, mining_cost=mining_cost, epsilon=10e-5)
     original_mdp.initMDPHelpers()
     original_mdp.initMatrices()
