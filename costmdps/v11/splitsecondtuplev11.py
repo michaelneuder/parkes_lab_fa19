@@ -5,11 +5,16 @@ import scipy.sparse as ss
 import warnings
 warnings.filterwarnings('ignore', category=ss.SparseEfficiencyWarning)
 
+ADOPT = 0
+OVERRIDE = 1
+WAIT = 2
+
 class SelfishMDP(object):
     def __init__(self, alpha, T, epsilon): 
         self.alpha = alpha
         self.T = T
         self.state_count = (T+1) * (T+1)
+        self.beta = 1 - np.exp(-1)
         self.epsilon = epsilon
         self.initMDPHelpers()
         print('initializing matrices...')
@@ -21,7 +26,6 @@ class SelfishMDP(object):
     
     def initMDPHelpers(self):
         self.action_count = 3
-        self.adopt = 0; self.override = 1; self.wait = 2
         # generate a state to integer mapping and list of states
         self.state_mapping = {}
         self.states = []
@@ -46,29 +50,37 @@ class SelfishMDP(object):
             a, h = self.states[state_index]
             
             # adopt transitions
-            self.transitions[self.adopt][state_index, self.state_mapping[1, 0]] = self.alpha
-            self.transitions[self.adopt][state_index, self.state_mapping[0, 1]] = 1 - self.alpha
+            self.transitions[ADOPT][state_index, self.state_mapping[1, 0]] = self.beta*self.alpha
+            self.transitions[ADOPT][state_index, self.state_mapping[0, 1]] = self.beta*(1 - self.alpha)
+            self.transitions[ADOPT][state_index, self.state_mapping[0, 0]] = (1 - self.beta)
+            
             # adopt rewards
-            self.reward_honest[self.adopt][state_index, self.state_mapping[1, 0]] = h
-            self.reward_honest[self.adopt][state_index, self.state_mapping[0, 1]] = h
+            self.reward_honest[ADOPT][state_index, self.state_mapping[1, 0]] = h
+            self.reward_honest[ADOPT][state_index, self.state_mapping[0, 1]] = h
+            self.reward_honest[ADOPT][state_index, self.state_mapping[0, 0]] = h
 
             # override
             if a > h:
-                self.transitions[self.override][state_index, self.state_mapping[a-h, 0]] = self.alpha
-                self.reward_selfish[self.override][state_index, self.state_mapping[a-h, 0]] = h+1
-                self.transitions[self.override][state_index, self.state_mapping[a-h-1, 1]] = 1 - self.alpha
-                self.reward_selfish[self.override][state_index, self.state_mapping[a-h-1, 1]] = h+1
+                self.transitions[OVERRIDE][state_index, self.state_mapping[a-h, 0]] = self.beta*self.alpha
+                self.transitions[OVERRIDE][state_index, self.state_mapping[a-h-1, 1]] = self.beta*(1 - self.alpha)
+                self.transitions[OVERRIDE][state_index, self.state_mapping[a-h-1, 0]] = (1 - self.beta)
+
+                self.reward_selfish[OVERRIDE][state_index, self.state_mapping[a-h, 0]] = h + 1
+                self.reward_selfish[OVERRIDE][state_index, self.state_mapping[a-h-1, 1]] = h + 1
+                self.reward_selfish[OVERRIDE][state_index, self.state_mapping[a-h-1, 0]] = h + 1
             else:
-                self.transitions[self.override][state_index, 0] = 1
-                self.reward_honest[self.override][state_index, 0] = 10000
+                self.transitions[OVERRIDE][state_index, 0] = 1
+                self.reward_honest[OVERRIDE][state_index, 0] = 10000
 
             # wait transitions
             if (a < self.T) and (h < self.T):
-                self.transitions[self.wait][state_index, self.state_mapping[a+1, h]] = self.alpha
-                self.transitions[self.wait][state_index, self.state_mapping[a, h+1]] = 1 - self.alpha
+                self.transitions[WAIT][state_index, self.state_mapping[a+1, h]] = self.beta*self.alpha
+                self.transitions[WAIT][state_index, self.state_mapping[a, h+1]] = self.beta*(1 - self.alpha)
+                self.transitions[WAIT][state_index, self.state_mapping[a, h]] = (1 - self.beta)
+                
             else:
-                self.transitions[self.wait][state_index, 0] = 1
-                self.reward_honest[self.wait][state_index, 0] = 10000
+                self.transitions[WAIT][state_index, 0] = 1
+                self.reward_honest[WAIT][state_index, 0] = 10000
 
     def getRhoBounds(self):
         low = 0; high = 1
@@ -85,20 +97,8 @@ class SelfishMDP(object):
             else:
                 high = rho
         opt_policy = rvi.policy
-        print('alpha: ', self.alpha, 'lower bound reward:', rho)
+        print('alpha: ', self.alpha, 'lower bound reward:', rho) 
         print(rvi.average_reward)
-        
-        # ql = mdptoolbox.mdp.QLearning(self.transitions, total_reward, discount=1, n_iter=100000)
-        # ql.run()
-        # self.processPolicy(ql.policy)
-        
-        # vi = mdptoolbox.mdp.ValueIteration(self.transitions, total_reward, discount=1, epsilon=self.epsilon/8)
-        # vi.run()
-        # self.processPolicy(vi.policy)
-        
-        # pi = mdptoolbox.mdp.PolicyIteration(self.transitions, total_reward, discount=0.99, eval_type=1)
-        # pi.run()
-        # self.processPolicy(pi.policy)
         print(np.reshape(opt_policy, (self.T+1, self.T+1)))
         self.processPolicy(opt_policy)
         
