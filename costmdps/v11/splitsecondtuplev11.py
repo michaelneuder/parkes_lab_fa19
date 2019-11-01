@@ -2,6 +2,7 @@ import mdptoolbox
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.sparse as ss
+import seaborn as sns
 import warnings
 warnings.filterwarnings('ignore', category=ss.SparseEfficiencyWarning)
 
@@ -10,11 +11,11 @@ OVERRIDE = 1
 WAIT = 2
 
 class SelfishMDP(object):
-    def __init__(self, alpha, T, epsilon): 
+    def __init__(self, alpha, T, beta, epsilon): 
         self.alpha = alpha
         self.T = T
         self.state_count = (T+1) * (T+1)
-        self.beta = 1 - np.exp(-1)
+        self.beta = beta
         self.epsilon = epsilon
         self.initMDPHelpers()
         print('initializing matrices...')
@@ -50,23 +51,14 @@ class SelfishMDP(object):
             a, h = self.states[state_index]
             
             # adopt transitions
-            self.transitions[ADOPT][state_index, self.state_mapping[1, 0]] = self.beta*self.alpha
-            self.transitions[ADOPT][state_index, self.state_mapping[0, 1]] = self.beta*(1 - self.alpha)
-            self.transitions[ADOPT][state_index, self.state_mapping[0, 0]] = (1 - self.beta)
+            self.transitions[ADOPT][state_index, self.state_mapping[0, 0]] = 1
             
             # adopt rewards
-            self.reward_honest[ADOPT][state_index, self.state_mapping[1, 0]] = h
-            self.reward_honest[ADOPT][state_index, self.state_mapping[0, 1]] = h
             self.reward_honest[ADOPT][state_index, self.state_mapping[0, 0]] = h
 
             # override
             if a > h:
-                self.transitions[OVERRIDE][state_index, self.state_mapping[a-h, 0]] = self.beta*self.alpha
-                self.transitions[OVERRIDE][state_index, self.state_mapping[a-h-1, 1]] = self.beta*(1 - self.alpha)
-                self.transitions[OVERRIDE][state_index, self.state_mapping[a-h-1, 0]] = (1 - self.beta)
-
-                self.reward_selfish[OVERRIDE][state_index, self.state_mapping[a-h, 0]] = h + 1
-                self.reward_selfish[OVERRIDE][state_index, self.state_mapping[a-h-1, 1]] = h + 1
+                self.transitions[OVERRIDE][state_index, self.state_mapping[a-h-1, 0]] = 1
                 self.reward_selfish[OVERRIDE][state_index, self.state_mapping[a-h-1, 0]] = h + 1
             else:
                 self.transitions[OVERRIDE][state_index, 0] = 1
@@ -76,8 +68,7 @@ class SelfishMDP(object):
             if (a < self.T) and (h < self.T):
                 self.transitions[WAIT][state_index, self.state_mapping[a+1, h]] = self.beta*self.alpha
                 self.transitions[WAIT][state_index, self.state_mapping[a, h+1]] = self.beta*(1 - self.alpha)
-                self.transitions[WAIT][state_index, self.state_mapping[a, h]] = (1 - self.beta)
-                
+                self.transitions[WAIT][state_index, self.state_mapping[a, h]] = (1 - self.beta) 
             else:
                 self.transitions[WAIT][state_index, 0] = 1
                 self.reward_honest[WAIT][state_index, 0] = 10000
@@ -101,6 +92,7 @@ class SelfishMDP(object):
         print(rvi.average_reward)
         print(np.reshape(opt_policy, (self.T+1, self.T+1)))
         self.processPolicy(opt_policy)
+        return opt_policy
         
     def processPolicy(self, policy):
         results = ''
@@ -122,10 +114,14 @@ class SelfishMDP(object):
         print(results)
 
 def main():
-    for alpha in [0.4]:
-        print(alpha)
-        mdp = SelfishMDP(alpha=alpha, T=8, epsilon=10e-5)
-        mdp.getRhoBounds()
+    beta = 1
+    alpha = 0.4
+    T = 8
+    mdp = SelfishMDP(alpha=alpha, T=T, beta=beta, epsilon=10e-5)
+    opt_policy = mdp.getRhoBounds()
+    sns.heatmap(np.reshape(opt_policy, (T+1, T+1)), cmap='viridis', annot=True)
+    plt.show()
+
 
 if __name__ == "__main__":
     main()
